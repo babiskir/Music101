@@ -1,4 +1,4 @@
-import { isBlackKey, midiToName, midiToPitch } from '../../domain/notes';
+import { isBlackKey, midiToName } from '../../domain/notes';
 
 export interface KeyHighlight {
   /** "current" = play now, "next" = coming up, "correct"/"wrong" = quiz feedback. */
@@ -14,11 +14,13 @@ interface Props {
   highlights: Record<number, KeyHighlight>;
   /** If given, keys are clickable (also lets you hear them). */
   onKeyPress?: (midi: number) => void;
+  /** Letter names on the white keys (turn off when the exercise asks you to find them). Default on. */
+  showNames?: boolean;
 }
 
 const MIDDLE_C = 60;
 
-export function Keyboard({ from, to, highlights, onKeyPress }: Props) {
+export function Keyboard({ from, to, highlights, onKeyPress, showNames = true }: Props) {
   const whites: number[] = [];
   const blacks: number[] = [];
   for (let m = from; m <= to; m++) (isBlackKey(m) ? blacks : whites).push(m);
@@ -37,10 +39,12 @@ export function Keyboard({ from, to, highlights, onKeyPress }: Props) {
         {whites.map((m) => (
           <div key={m} className={`white${cls(m)}`} onClick={() => onKeyPress?.(m)}>
             {highlights[m]?.label && <span className="finger">{highlights[m].label}</span>}
-            <span className="name">
-              {m % 12 === 0 ? midiToPitch(m) : midiToName(m)}
-              {m === MIDDLE_C && <em> middle</em>}
-            </span>
+            {showNames && (
+              <span className="name">
+                {midiToName(m)}
+                {m === MIDDLE_C && <em> middle</em>}
+              </span>
+            )}
           </div>
         ))}
       </div>

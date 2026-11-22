@@ -44,3 +44,8 @@ export function describePitch(midi: number): string {
     ? `${NAMES[midi % 12]}${octave} / ${FLAT_NAMES[midi % 12]}${octave}`
     : midiToPitch(midi);
 }
+
+/** How a pitch class is said aloud: "F sharp", "D flat" is avoided by always using the sharp name. */
+export function spokenName(pc: number): string {
+  return NAMES[pc].replace('#', ' sharp');
+}

@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { PianoBar } from '../input/PianoBar';
+import { setSpeak, useSpeak } from '../guide/feedback';
+import { GuidedLesson } from '../guide/GuidedLesson';
+import { PianoStatus } from '../input/PianoStatus';
 import { usePiano } from '../input/PianoInput';
 import { lessons } from '../lessons/registry';
 import { useProgress } from '../lessons/progress';
@@ -12,7 +14,10 @@ const REPO_URL = 'https://github.com/babiskir/Music101';
 function loadLessonId(): string {
   // ?lesson=hand-position opens a lesson directly (handy for bookmarks).
   const fromUrl = new URLSearchParams(window.location.search).get('lesson');
-  if (fromUrl && lessons.some((l) => l.id === fromUrl)) return fromUrl;
+  if (fromUrl && lessons.some((l) => l.id === fromUrl)) {
+    storage.set('lesson', fromUrl); // opening a link counts as choosing that lesson
+    return fromUrl;
+  }
   return storage.get('lesson', lessons[0].id, (v): v is string => lessons.some((l) => l.id === v));
 }
 
@@ -26,13 +31,15 @@ function loadPageId(): string | null {
 export function App() {
   const [lessonId, setLessonId] = useState(loadLessonId);
   const [pageId, setPageId] = useState<string | null>(loadPageId);
-  const { done, toggle } = useProgress();
+  const { done, toggle, markDone } = useProgress();
   const piano = usePiano();
+  const speaking = useSpeak();
 
   const index = Math.max(0, lessons.findIndex((l) => l.id === lessonId));
   const current = lessons[index];
   const isDone = done.includes(current.id);
   const nextLesson = lessons[index + 1];
+  const connectionProblem = piano.error ?? (piano.mic.state.status === 'error' ? piano.mic.state.error : undefined);
   const page = pageId ? pages.find((p) => p.id === pageId) ?? null : null;
 
   const openLesson = (id: string) => {
@@ -48,7 +55,7 @@ export function App() {
   };
 
   const resetAll = () => {
-    if (window.confirm('Forget all saved progress, scores and settings in this browser?')) {
+    if (window.confirm('Forget all saved progress, scores and settings?')) {
       storage.clearAll();
       window.location.href = window.location.pathname; // reload without ?lesson= / ?page=
     }
@@ -88,6 +95,7 @@ export function App() {
           heading: true,
           label: piano.connected ? `Connected: ${piano.deviceName || 'keyboard'}` : 'Not connected',
         },
+        { id: 'connect-auto', label: 'Connect (automatic)', disabled: piano.connected, onSelect: () => void piano.connect() },
         { id: 'connect-mic', label: 'Connect: cable / microphone', disabled: piano.connected, onSelect: () => void piano.connectMic() },
         { id: 'connect-midi', label: 'Connect: USB (MIDI)', disabled: piano.connected, onSelect: () => void piano.connectMidi() },
         { id: 'disconnect', label: 'Disconnect', disabled: !piano.connected, onSelect: piano.disconnect },
@@ -96,11 +104,21 @@ export function App() {
       ],
     },
     {
+      id: 'tools',
+      label: 'Tools',
+      items: [{ id: 'metronome', label: 'Metronome…', current: pageId === 'metronome', onSelect: () => openPage('metronome') }],
+    },
+    {
       id: 'settings',
       label: 'Settings',
       align: 'right',
       items: [
         { id: 'mic-settings', label: 'Microphone & input…', current: pageId === 'mic-settings', onSelect: () => openPage('mic-settings') },
+        {
+          id: 'speak',
+          label: `${speaking ? '✓ ' : ''}Spoken instructions`,
+          onSelect: () => setSpeak(!speaking),
+        },
         { id: 'sep-reset', separator: true },
         { id: 'reset', label: 'Reset saved progress and settings…', onSelect: resetAll },
       ],
@@ -119,9 +137,13 @@ export function App() {
 
   return (
     <main className="app">
-      <MenuBar brand="🎹 Music101" menus={menus} />
+      <MenuBar
+        brand="🎹 Music101"
+        menus={menus}
+        right={<PianoStatus onOpenSettings={() => openPage('mic-settings')} />}
+      />
 
-      <PianoBar onOpenMicSettings={() => openPage('mic-settings')} />
+      {connectionProblem && !piano.connected && <p className="hint-box error">{connectionProblem}</p>}
 
       {page ? (
         <>
@@ -143,17 +165,14 @@ export function App() {
             </ul>
           </section>
 
-          {/* key so each lesson starts with fresh state */}
-          <current.Component key={current.id} />
-
-          <footer className="lesson-footer">
-            <button className={isDone ? '' : 'primary'} onClick={() => toggle(current.id)}>
-              {isDone ? '✓ Done (click to undo)' : 'Mark lesson as done'}
-            </button>
-            {nextLesson && (
-              <button onClick={() => openLesson(nextLesson.id)}>Next: {nextLesson.title} →</button>
-            )}
-          </footer>
+          {/* key so each lesson starts fresh */}
+          <GuidedLesson
+            key={current.id}
+            lesson={current}
+            onComplete={() => markDone(current.id)}
+            nextTitle={nextLesson?.title}
+            onNext={nextLesson ? () => openLesson(nextLesson.id) : undefined}
+          />
         </>
       )}
 

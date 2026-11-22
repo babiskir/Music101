@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 
 export interface MenuItem {
   id: string;
@@ -29,7 +29,7 @@ const ITEM_SELECTOR = '[role="menuitem"]:not(:disabled):not([aria-disabled="true
  * Desktop-style menu bar. Click (or Enter / Down arrow) opens a menu; arrow keys move around;
  * Left/Right switch menus; Escape closes. Closes when you click elsewhere.
  */
-export function MenuBar({ brand, menus }: { brand: string; menus: MenuDef[] }) {
+export function MenuBar({ brand, menus, right }: { brand: string; menus: MenuDef[]; right?: ReactNode }) {
   const [openId, setOpenId] = useState<string | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const triggers = useRef<Record<string, HTMLButtonElement | null>>({});
@@ -172,6 +172,7 @@ export function MenuBar({ brand, menus }: { brand: string; menus: MenuDef[] }) {
           );
         })}
       </div>
+      {right && <div className="menubar-right">{right}</div>}
     </div>
   );
 }

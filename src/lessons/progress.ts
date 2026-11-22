@@ -15,5 +15,15 @@ export function useProgress() {
     });
   }, []);
 
-  return { done, toggle };
+  /** Mark as done (no-op if already). */
+  const markDone = useCallback((id: string) => {
+    setDone((prev) => {
+      if (prev.includes(id)) return prev;
+      const next = [...prev, id];
+      storage.set('done', next);
+      return next;
+    });
+  }, []);
+
+  return { done, toggle, markDone };
 }

@@ -1,15 +1,16 @@
-import type { ComponentType } from 'react';
+import type { Step } from '../guide/types';
 
 /**
- * A lesson is one teaching module: a short goal list (shown by the app shell) plus a
- * screen that owns its own layout and composes reusable widgets from src/features.
+ * A lesson is a guided session played on the piano: a goal list plus an ordered list of steps
+ * (read and continue, play this, play along with the metronome). The shared runner in
+ * src/guide turns it into a screen, so adding a lesson means adding data, not UI code.
  */
 export interface LessonDef {
   id: string;
   title: string;
-  /** One line shown under the dropdown. */
+  /** One line shown at the top of the lesson. */
   summary: string;
-  /** "After this lesson you can..." bullets, shown above the lesson. */
+  /** "After this lesson you can..." bullets. */
   goals: string[];
-  Component: ComponentType;
+  steps: Step[];
 }

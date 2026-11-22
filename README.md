@@ -23,19 +23,24 @@ Other scripts: `npm run build` (typecheck + production build), `npm run typechec
 
 ## Lessons
 
-Use the menu bar at the top: **Lessons** (pick a lesson, mark it done, go to the next), **Keyboard** (connect / disconnect, microphone settings), **Settings** (microphone & input, reset saved data) and **Help** (connecting your keyboard). Each lesson lists what you can do afterwards, and you can tick it
-as done. Open one directly with `?lesson=<id>`, e.g. `http://localhost:5173/?lesson=reading-notes`.
+Lessons are **played on your piano**, not clicked on the screen. Each lesson is a guided session: the app tells you what
+to play, shows it (keyboard, sheet music, finger numbers), listens, chimes when you are right and moves on by itself.
+Playing any key is the "Next" button on read-and-continue screens. Quizzes show a note either as a **letter** (A to G,
+with sharps like F#; any octave counts) or on the **staff** (exactly that key), or mixed, and never with octave numbers.
+Clicking the on-screen keys still works if no keyboard is connected. The ← → keys on the PC keyboard go back / skip.
 
-| # | Lesson (id) | What you do |
+Menu bar: **Lessons** (pick a lesson, mark it done), **Keyboard** (connect / disconnect), **Tools** (metronome),
+**Settings** (microphone & input, spoken instructions, reset saved data), **Help**. Open a lesson with `?lesson=<id>`.
+
+| # | Lesson (id) | What you do on the piano |
 |---|---|---|
-| 1 | Meet the keyboard (`keyboard-basics`) | Black-key groups, middle C, find every C/D/E…; click keys to hear them |
-| 2 | Find the key (`find-the-key`) | Note name → key and key → name quizzes with landmark hints |
-| 3 | Hand & fingers (`hand-position`) | Five-finger position for both hands, "which finger?" quiz, finger drills |
-| 4 | Feel the beat (`rhythm-basics`) | Count along with the metronome; rhythm patterns on a real staff |
-| 5 | Reading notes (`reading-notes`) | A note appears on the staff, click the matching key |
-| 6 | First songs (`first-songs`) | Ode to Joy and Twinkle Twinkle: step through or play along with sheet music, fingering and count-in |
-
-Lessons 1, 2, 3, 5 and 6 work with your connected keyboard (see below): answer, drill and play on the real piano.
+| 1 | Meet the keyboard (`keyboard-basics`) | Black-key groups, any C, middle C, the white keys up and down |
+| 2 | Find the note (`find-the-key`) | A letter or a staff note appears: play it; ends with mixed prompts |
+| 3 | Hand & fingers (`hand-position`) | Five-finger position for both hands, finger drills with and without lit keys |
+| 4 | Feel the beat (`rhythm-basics`) | Play any key on each note in time with the metronome; the app grades how steady you are |
+| 5 | Reading notes (`reading-notes`) | Read notes on the staff and play them; ends with mixed prompts |
+| 6 | Ode to Joy (`ode-to-joy`) | Learn it two bars at a time, then from the sheet music alone |
+| 7 | Twinkle, Twinkle (`twinkle-twinkle`) | Same method; one new note for the pinky |
 
 ## Connecting your keyboard
 
@@ -69,6 +74,17 @@ mode (metronome) are still just a guide; they don't grade your timing yet.
 - Browser noise suppression, echo cancellation and auto-gain are deliberately off: they are built for speech
   and distort musical notes.
 
+## Tests
+
+```
+npm test          # all tests, ~1 second
+npm run test:watch
+```
+
+Tests are plain Node (Vitest): note detection, rhythm grading, quiz prompts, and every lesson's content (for example:
+no octave numbers like "C4" anywhere in what the player sees). There is no browser, audio or real-time waiting in them,
+so the whole suite stays fast. Keep it that way: test logic as pure functions, don't script a real browser.
+
 ## Saved data
 
 Stored in this browser's localStorage under `music101.*` (never leaves your machine): lesson progress,
@@ -85,7 +101,7 @@ src/
   pages/                non-lesson screens reached from the menus: microphone & input settings, help
   domain/               pure TS, no React/DOM: notes & MIDI math, Song types, Instrument (CT-S100)
   data/songs/           songs as data (add a file + register it in index.ts)
-  input/                PianoInput (shared keyboard connection: USB MIDI or mic), PianoBar,
+  input/                PianoInput (shared keyboard connection: USB MIDI or mic), PianoStatus,
                         noteTracker (pitch frames -> key presses), midi parsing
   audio/                Web Audio: click/note sounds, MetronomeEngine, microphone input,
                         YIN pitch detection, noise gate (AudioWorklet), input-device helpers

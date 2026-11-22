@@ -1,4 +1,5 @@
 import { classifyInput, inputHint } from '../../audio/micDevices';
+import { normalizeLabel } from '../../audio/micSettings';
 import { usePiano } from '../../input/PianoInput';
 import { CT_S100 } from '../../domain/instrument';
 import { midiToPitch } from '../../domain/notes';
@@ -52,7 +53,7 @@ export function MicSettings() {
       {listening && (
         <>
           <p className="explain">
-            Using: <strong>{state.deviceLabel || 'unknown input'}</strong>
+            Using: <strong>{state.deviceLabel ? normalizeLabel(state.deviceLabel) : 'unknown input'}</strong>
           </p>
           {state.switchedFrom && (
             <p className="hint-box">

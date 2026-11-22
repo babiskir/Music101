@@ -12,14 +12,17 @@ export function HelpPage({ openPage }: PageProps) {
       <h3>Two ways to connect your CT-S100</h3>
       <ul>
         <li>
-          <strong>USB (MIDI)</strong>: plug the piano's USB port into the PC and choose{' '}
-          <em>Keyboard → Connect: USB (MIDI)</em>. Exact notes, and the piano keeps its own sound.
+          <strong>USB (MIDI)</strong>: plug the piano's USB port into the PC. Exact notes, and the piano keeps its own sound.
         </li>
         <li>
           <strong>Cable / microphone</strong>: the piano's output into the PC's mic jack (or a microphone near the
-          piano), then <em>Keyboard → Connect: cable / microphone</em>. The app detects one note at a time.
+          piano). The app detects one note at a time.
         </li>
       </ul>
+      <p>
+        The app connects by itself when it starts: a USB MIDI keyboard if there is one, otherwise your last-used
+        input. Choose <em>Keyboard → Disconnect</em> to stop that. The indicator at the top right shows the state.
+      </p>
       <div className="row">
         <button className="primary" onClick={() => void piano.connectMic()} disabled={piano.connected}>
           Connect: cable / microphone

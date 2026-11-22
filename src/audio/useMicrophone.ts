@@ -79,6 +79,7 @@ export function useMicrophone(options: { onFrame?: (frame: MicFrame) => void } =
     raf: number;
   } | null>(null);
   const deviceLabelRef = useRef<string | undefined>(undefined);
+  const startToken = useRef(0); // counts start() calls, so an outdated one can cancel itself
 
   // "Hear it": play the input through the PC's speakers/headphones. Starts off, and comes back on only
   // for the same input it was switched on for (a real mic next to speakers would howl).
@@ -153,6 +154,7 @@ export function useMicrophone(options: { onFrame?: (frame: MicFrame) => void } =
   const start = useCallback(
     async (deviceId?: string, switchedFrom?: string, restored = false) => {
       stop();
+      const token = ++startToken.current;
       setState({ ...IDLE, status: 'requesting' });
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
@@ -164,6 +166,10 @@ export function useMicrophone(options: { onFrame?: (frame: MicFrame) => void } =
             autoGainControl: false,
           },
         });
+        if (token !== startToken.current) {
+          stream.getTracks().forEach((t) => t.stop()); // a newer start() took over
+          return;
+        }
         // Labels are only available after permission was granted.
         const inputs = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.kind === 'audioinput');
         setDevices(inputs);
@@ -219,6 +225,10 @@ export function useMicrophone(options: { onFrame?: (frame: MicFrame) => void } =
           tail = tail.connect(gate);
         } catch {
           /* worklets unavailable: monitor works, just without the gate */
+        }
+        if (token !== startToken.current) {
+          stream.getTracks().forEach((t) => t.stop());
+          return;
         }
 
         // "Hear it" is only on for the input it was switched on for.
