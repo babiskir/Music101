@@ -5,6 +5,9 @@ import { isBlackKey, midiToPitch } from '../../domain/notes';
 import type { TimedNote } from '../../domain/song';
 import { Keyboard, type KeyHighlight } from '../../features/keyboard/Keyboard';
 import { StaffNotation } from '../../features/staff/StaffNotation';
+import { oneOf } from '../../lib/storage';
+import { formatLifetime, useLifetimeStats } from '../../lib/useLifetimeStats';
+import { usePersistentState } from '../../lib/usePersistentState';
 
 const MIDDLE_C = 60;
 const LEVELS = {
@@ -21,7 +24,12 @@ function pickNote(top: number, avoid: number | null): number {
 
 /** Layout: staff on the left, keyboard below it, score on the right. Stacks on narrow screens. */
 export function ReadingNotes() {
-  const [level, setLevel] = useState<Level>('C to G (5 notes)');
+  const [level, setLevel] = usePersistentState<Level>(
+    'reading.level',
+    'C to G (5 notes)',
+    oneOf(...(Object.keys(LEVELS) as Level[])),
+  );
+  const { lifetime, record } = useLifetimeStats('reading-notes');
   const top = LEVELS[level];
   const [target, setTarget] = useState(() => pickNote(top, null));
   const [feedback, setFeedback] = useState<{ midi: number; ok: boolean } | null>(null);
@@ -40,6 +48,7 @@ export function ReadingNotes() {
     playNote(midi, getAudioContext().currentTime, 0.7);
     if (feedback?.ok) return; // already answered, waiting for next note
     const ok = midi === target;
+    record(ok);
     setFeedback({ midi, ok });
     setScore((s) => ({ right: s.right + (ok ? 1 : 0), tries: s.tries + 1 }));
     if (ok) {
@@ -72,6 +81,7 @@ export function ReadingNotes() {
       <aside className="card reading-side">
         <h3>Score</h3>
         <p className="score">{score.right} <span className="muted">/ {score.tries} tries</span></p>
+        <p className="lifetime">{formatLifetime(lifetime)}</p>
         <label>
           Notes{' '}
           <select value={level} onChange={(e) => changeLevel(e.target.value as Level)}>

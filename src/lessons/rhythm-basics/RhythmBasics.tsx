@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import type { Song, SongNote } from '../../domain/song';
 import { Metronome } from '../../features/metronome/Metronome';
+import { isBoolean, numberBetween, oneOf } from '../../lib/storage';
+import { usePersistentState } from '../../lib/usePersistentState';
 import { StaffNotation } from '../../features/staff/StaffNotation';
 import { useSongPlayer } from '../../features/practice/useSongPlayer';
 
@@ -43,9 +45,9 @@ function toSong(p: Pattern): Song {
 
 /** Layout: pattern + staff + controls on the left; reference table and plain metronome on the right. */
 export function RhythmBasics() {
-  const [patternId, setPatternId] = useState(PATTERNS[0].id);
-  const [bpm, setBpm] = useState(60);
-  const [hearNotes, setHearNotes] = useState(true);
+  const [patternId, setPatternId] = usePersistentState('rhythm.pattern', PATTERNS[0].id, oneOf(...PATTERNS.map((p) => p.id)));
+  const [bpm, setBpm] = usePersistentState('rhythm.bpm', 60, numberBetween(30, 120));
+  const [hearNotes, setHearNotes] = usePersistentState('rhythm.hear', true, isBoolean);
   const pattern = PATTERNS.find((p) => p.id === patternId) ?? PATTERNS[0];
   const [song, setSong] = useState(() => toSong(pattern));
 

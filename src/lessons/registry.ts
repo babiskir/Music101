@@ -5,6 +5,7 @@ import { HandPosition } from './hand-position/HandPosition';
 import { RhythmBasics } from './rhythm-basics/RhythmBasics';
 import { ReadingNotes } from './reading-notes/ReadingNotes';
 import { FirstSongs } from './first-songs/FirstSongs';
+import { MicCheck } from './mic-check/MicCheck';
 
 /** Order here = order in the dropdown = suggested learning order. */
 export const lessons: LessonDef[] = [
@@ -74,5 +75,15 @@ export const lessons: LessonDef[] = [
       'Speed up gradually from 50 BPM',
     ],
     Component: FirstSongs,
+  },
+  {
+    id: 'mic-check',
+    title: 'Mic check',
+    summary: 'Test your microphone: level meter and live note detection.',
+    goals: [
+      'Confirm the browser can hear your microphone',
+      'See which note the app hears when you play one key on the CT-S100',
+    ],
+    Component: MicCheck,
   },
 ];

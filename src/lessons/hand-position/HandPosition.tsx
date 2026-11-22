@@ -1,9 +1,10 @@
-import { useState } from 'react';
 import { getAudioContext } from '../../audio/audioContext';
 import { playNote } from '../../audio/sounds';
 import { midiToPitch } from '../../domain/notes';
 import { FINGER_NAMES } from '../../domain/song';
 import { Keyboard, type KeyHighlight } from '../../features/keyboard/Keyboard';
+import { oneOf } from '../../lib/storage';
+import { usePersistentState } from '../../lib/usePersistentState';
 import { FingerDrill } from './FingerDrill';
 import { FingerQuiz } from './FingerQuiz';
 import { FINGERS, POSITIONS, POSTURE_TIPS, type Hand } from './positions';
@@ -12,8 +13,8 @@ type Tab = 'place' | 'quiz' | 'drill';
 
 /** Layout: hand + exercise tabs on top; the exercise body below changes per tab. */
 export function HandPosition() {
-  const [hand, setHand] = useState<Hand>('right');
-  const [tab, setTab] = useState<Tab>('place');
+  const [hand, setHand] = usePersistentState<Hand>('hand.hand', 'right', oneOf('right', 'left'));
+  const [tab, setTab] = usePersistentState<Tab>('hand.tab', 'place', oneOf('place', 'quiz', 'drill'));
   const pos = POSITIONS[hand];
 
   return (

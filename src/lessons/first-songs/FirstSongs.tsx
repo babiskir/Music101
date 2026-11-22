@@ -1,11 +1,12 @@
-import { useState } from 'react';
 import { songs } from '../../data/songs';
 import { Metronome } from '../../features/metronome/Metronome';
 import { SongPractice } from '../../features/practice/SongPractice';
+import { oneOf } from '../../lib/storage';
+import { usePersistentState } from '../../lib/usePersistentState';
 
 /** Layout: song picker on top, full practice card, metronome below. */
 export function FirstSongs() {
-  const [songId, setSongId] = useState(songs[0].id);
+  const [songId, setSongId] = usePersistentState('songs.current', songs[0].id, oneOf(...songs.map((s) => s.id)));
   const song = songs.find((s) => s.id === songId) ?? songs[0];
 
   return (

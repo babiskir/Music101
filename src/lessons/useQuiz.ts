@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useLifetimeStats } from '../lib/useLifetimeStats';
 
 export interface QuizResult<D> {
   ok: boolean;
@@ -12,7 +13,8 @@ const ADVANCE_MS = 900;
  * Shared "ask a question, check the answer, keep score" loop used by the exercises.
  * `pick` creates the next target; a right answer auto-advances after a short pause.
  */
-export function useQuiz<T, D = undefined>(pick: (prev: T | null) => T) {
+export function useQuiz<T, D = undefined>(pick: (prev: T | null) => T, statsId = '') {
+  const { lifetime, record } = useLifetimeStats(statsId);
   const pickRef = useRef(pick);
   pickRef.current = pick;
 
@@ -40,15 +42,16 @@ export function useQuiz<T, D = undefined>(pick: (prev: T | null) => T) {
       if (locked.current) return;
       setResult({ ok, detail });
       setScore((s) => ({ right: s.right + (ok ? 1 : 0), tries: s.tries + 1 }));
+      record(ok);
       if (ok) {
         locked.current = true;
         timer.current = window.setTimeout(advance, ADVANCE_MS);
       }
     },
-    [advance],
+    [advance, record],
   );
 
   const resetScore = useCallback(() => setScore({ right: 0, tries: 0 }), []);
 
-  return { target, result, score, answer, restart: advance, resetScore };
+  return { target, result, score, lifetime, answer, restart: advance, resetScore };
 }

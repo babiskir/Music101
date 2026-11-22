@@ -1,9 +1,11 @@
-import { useState } from 'react';
 import { getAudioContext } from '../../audio/audioContext';
 import { playNote } from '../../audio/sounds';
 import { midiToPitch } from '../../domain/notes';
 import { FINGER_NAMES, type Finger } from '../../domain/song';
 import { Keyboard, type KeyHighlight } from '../../features/keyboard/Keyboard';
+import { oneOf } from '../../lib/storage';
+import { formatLifetime } from '../../lib/useLifetimeStats';
+import { usePersistentState } from '../../lib/usePersistentState';
 import { useQuiz } from '../useQuiz';
 import { FINGERS, POSITIONS, type Hand } from './positions';
 
@@ -16,8 +18,8 @@ function randomFinger(prev: Finger | null): Finger {
 
 export function FingerQuiz({ hand }: { hand: Hand }) {
   const pos = POSITIONS[hand];
-  const [direction, setDirection] = useState<Direction>('key-to-finger');
-  const quiz = useQuiz<Finger, number>(randomFinger);
+  const [direction, setDirection] = usePersistentState<Direction>('finger.direction', 'key-to-finger', oneOf('key-to-finger', 'finger-to-key'));
+  const quiz = useQuiz<Finger, number>(randomFinger, 'finger-quiz');
   const { target, result, score } = quiz;
   const targetKey = pos.keys[target];
 
@@ -82,6 +84,7 @@ export function FingerQuiz({ hand }: { hand: Hand }) {
         </div>
       )}
       <p className="explain feedback">{feedback}</p>
+      <p className="lifetime">{formatLifetime(quiz.lifetime)}</p>
     </div>
   );
 }

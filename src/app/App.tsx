@@ -1,20 +1,13 @@
 import { useState } from 'react';
 import { lessons } from '../lessons/registry';
 import { useProgress } from '../lessons/progress';
-
-const STORAGE_KEY = 'music101.lesson';
+import { storage } from '../lib/storage';
 
 function loadLessonId(): string {
   // ?lesson=hand-position opens a lesson directly (handy for bookmarks).
   const fromUrl = new URLSearchParams(window.location.search).get('lesson');
   if (fromUrl && lessons.some((l) => l.id === fromUrl)) return fromUrl;
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved && lessons.some((l) => l.id === saved)) return saved;
-  } catch {
-    /* storage unavailable: fall through */
-  }
-  return lessons[0].id;
+  return storage.get('lesson', lessons[0].id, (v): v is string => lessons.some((l) => l.id === v));
 }
 
 export function App() {
@@ -28,10 +21,13 @@ export function App() {
   const choose = (id: string) => {
     setLessonId(id);
     window.scrollTo({ top: 0 });
-    try {
-      localStorage.setItem(STORAGE_KEY, id);
-    } catch {
-      /* ignore */
+    storage.set('lesson', id);
+  };
+
+  const resetAll = () => {
+    if (window.confirm('Forget all saved progress, scores and settings in this browser?')) {
+      storage.clearAll();
+      window.location.href = window.location.pathname; // reload without ?lesson=
     }
   };
 
@@ -70,6 +66,10 @@ export function App() {
           <button onClick={() => choose(nextLesson.id)}>Next: {nextLesson.title} →</button>
         )}
       </footer>
+      <p className="reset-row">
+        Progress and settings are saved in this browser.{' '}
+        <button className="link" onClick={resetAll}>Reset everything</button>
+      </p>
     </main>
   );
 }

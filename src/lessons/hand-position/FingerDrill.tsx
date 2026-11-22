@@ -3,6 +3,8 @@ import { getAudioContext } from '../../audio/audioContext';
 import { playNote } from '../../audio/sounds';
 import type { Finger } from '../../domain/song';
 import { Keyboard, type KeyHighlight } from '../../features/keyboard/Keyboard';
+import { isBoolean, oneOf } from '../../lib/storage';
+import { usePersistentState } from '../../lib/usePersistentState';
 import { POSITIONS, type Hand } from './positions';
 
 const DRILLS: { id: string; title: string; fingers: Finger[] }[] = [
@@ -18,11 +20,11 @@ const DRILLS: { id: string; title: string; fingers: Finger[] }[] = [
  */
 export function FingerDrill({ hand }: { hand: Hand }) {
   const pos = POSITIONS[hand];
-  const [drillId, setDrillId] = useState(DRILLS[0].id);
+  const [drillId, setDrillId] = usePersistentState('drill.id', DRILLS[0].id, oneOf(...DRILLS.map((d) => d.id)));
   const [step, setStep] = useState(0);
   const [mistakes, setMistakes] = useState(0);
   const [wrongKey, setWrongKey] = useState<number | null>(null);
-  const [showHint, setShowHint] = useState(false);
+  const [showHint, setShowHint] = usePersistentState('drill.hint', false, isBoolean);
   const timer = useRef<number | null>(null);
   useEffect(() => () => { if (timer.current) window.clearTimeout(timer.current); }, []);
 

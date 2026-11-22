@@ -3,6 +3,9 @@ import { getAudioContext } from '../../audio/audioContext';
 import { playNote } from '../../audio/sounds';
 import { describePitch, isBlackKey, pitchClassLabel } from '../../domain/notes';
 import { Keyboard, type KeyHighlight } from '../../features/keyboard/Keyboard';
+import { isBoolean, oneOf } from '../../lib/storage';
+import { formatLifetime } from '../../lib/useLifetimeStats';
+import { usePersistentState } from '../../lib/usePersistentState';
 import { useQuiz } from '../useQuiz';
 
 type Mode = 'name-to-key' | 'key-to-name';
@@ -43,13 +46,17 @@ function randomNote(range: readonly [number, number], sharps: boolean, prev: num
  * Two directions: name -> click the key, and highlighted key -> name it.
  */
 export function FindTheKey() {
-  const [mode, setMode] = useState<Mode>('name-to-key');
-  const [rangeName, setRangeName] = useState<RangeName>('One octave (C4–C5)');
-  const [sharps, setSharps] = useState(false);
+  const [mode, setMode] = usePersistentState<Mode>('find.mode', 'name-to-key', oneOf('name-to-key', 'key-to-name'));
+  const [rangeName, setRangeName] = usePersistentState<RangeName>(
+    'find.range',
+    'One octave (C4–C5)',
+    oneOf(...(Object.keys(RANGES) as RangeName[])),
+  );
+  const [sharps, setSharps] = usePersistentState('find.sharps', false, isBoolean);
   const [hintFor, setHintFor] = useState<number | null>(null);
   const range = RANGES[rangeName];
 
-  const quiz = useQuiz<number, number>((prev) => randomNote(range, sharps, prev));
+  const quiz = useQuiz<number, number>((prev) => randomNote(range, sharps, prev), 'find-the-key');
   const { target, result, score } = quiz;
 
   // New question when the settings change.
@@ -133,6 +140,7 @@ export function FindTheKey() {
         <button onClick={quiz.resetScore}>Reset score</button>
       </div>
       {hintFor === target && <p className="hint-box">{LANDMARKS[target % 12]}</p>}
+      <p className="lifetime">{formatLifetime(quiz.lifetime)}</p>
     </section>
   );
 }

@@ -1,16 +1,19 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { CT_S100 } from '../../domain/instrument';
 import { pitchToMidi } from '../../domain/notes';
 import { FINGER_NAMES, type Song } from '../../domain/song';
+import { isBoolean, numberBetween } from '../../lib/storage';
+import { usePersistentState } from '../../lib/usePersistentState';
 import { Keyboard, type KeyHighlight } from '../keyboard/Keyboard';
 import { rangeForNotes } from '../keyboard/range';
 import { StaffNotation } from '../staff/StaffNotation';
 import { useSongPlayer } from './useSongPlayer';
 
 export function SongPractice({ song }: { song: Song }) {
-  const [bpm, setBpm] = useState(60);
-  const [hearNotes, setHearNotes] = useState(true);
-  const [fullKeyboard, setFullKeyboard] = useState(false);
+  // Tempo is remembered per song, so each song picks up where you left off.
+  const [bpm, setBpm] = usePersistentState(`practice.bpm.${song.id}`, 60, numberBetween(30, 160));
+  const [hearNotes, setHearNotes] = usePersistentState('practice.hear', true, isBoolean);
+  const [fullKeyboard, setFullKeyboard] = usePersistentState('practice.fullkeys', false, isBoolean);
 
   const player = useSongPlayer(song, { bpm, hearNotes });
   const { notes, activeIndex } = player;

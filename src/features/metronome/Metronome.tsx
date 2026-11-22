@@ -1,12 +1,14 @@
 import { useRef, useState } from 'react';
+import { numberBetween } from '../../lib/storage';
+import { usePersistentState } from '../../lib/usePersistentState';
 import { useMetronomeEngine } from './useMetronomeEngine';
 
 const MIN_BPM = 30;
 const MAX_BPM = 220;
 
 export function Metronome() {
-  const [bpm, setBpm] = useState(80);
-  const [beatsPerBar, setBeatsPerBar] = useState(4);
+  const [bpm, setBpm] = usePersistentState('metronome.bpm', 80, numberBetween(MIN_BPM, MAX_BPM));
+  const [beatsPerBar, setBeatsPerBar] = usePersistentState('metronome.beats', 4, numberBetween(2, 6));
   const [currentBeat, setCurrentBeat] = useState<number | null>(null);
   const taps = useRef<number[]>([]);
 
