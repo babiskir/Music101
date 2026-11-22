@@ -80,7 +80,7 @@ input[type='range'] { width: 100%; accent-color: var(--accent); }
 .bpm-value strong { font-size: 2.4rem; }
 
 /* Classes */
-.class-summary { margin: -8px 0 0; color: var(--muted); }
+
 .explain { margin: 12px 0 4px; }
 .feedback { min-height: 1.5em; font-size: 1.1rem; }
 .tabs { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 12px; }
@@ -109,3 +109,21 @@ input[type='range'] { width: 100%; accent-color: var(--accent); }
 }
 .card > h3:first-child { margin-top: 0; }
 .now .hint { font-size: 1rem; }
+
+/* Lesson shell */
+.class-summary { margin: 0 0 8px; }
+.goals h3 { margin: 8px 0 4px; }
+.goals ul { margin: 0; padding-left: 20px; }
+.lesson-footer { display: flex; gap: 12px; flex-wrap: wrap; justify-content: space-between; }
+
+/* Exercises */
+.prompt { font-size: 1.6rem; margin: 12px 0; }
+.prompt strong { color: var(--current); }
+.answers { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.answers button { min-width: 52px; font-size: 1.05rem; }
+.hint-box { background: #2a3040; border-left: 4px solid var(--accent); padding: 8px 12px; border-radius: 4px; }
+.finger-table { max-width: 320px; margin: 12px 0; }
+.drill-seq { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
+.seq-chip { min-width: 36px; text-align: center; padding: 6px 8px; border-radius: 8px; background: #2c313b; font-weight: bold; font-size: 1.1rem; }
+.seq-chip.done { background: #1f5c3a; color: #bfeed2; }
+.seq-chip.now { background: var(--current); color: #111; }

@@ -2,6 +2,9 @@ import type { Pitch } from './notes';
 
 export type Finger = 1 | 2 | 3 | 4 | 5;
 
+/** Index by finger number (1-5). */
+export const FINGER_NAMES = ['', 'thumb', 'index', 'middle', 'ring', 'pinky'] as const;
+
 export interface SongNote {
   pitch: Pitch;
   /** Length in beats (quarter note = 1 in x/4 time). */

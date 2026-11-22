@@ -29,3 +29,18 @@ export function isBlackKey(midi: number): boolean {
 export function midiToFrequency(midi: number): number {
   return 440 * 2 ** ((midi - 69) / 12);
 }
+
+const FLAT_NAMES = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'] as const;
+
+/** Label for a pitch class: "C", or "C#/Db" for black keys. */
+export function pitchClassLabel(pc: number): string {
+  return NAMES[pc].includes('#') ? `${NAMES[pc]}/${FLAT_NAMES[pc]}` : NAMES[pc];
+}
+
+/** "C#4 / Db4" for black keys, plain "C4" for white keys. */
+export function describePitch(midi: number): string {
+  const octave = Math.floor(midi / 12) - 1;
+  return isBlackKey(midi)
+    ? `${NAMES[midi % 12]}${octave} / ${FLAT_NAMES[midi % 12]}${octave}`
+    : midiToPitch(midi);
+}

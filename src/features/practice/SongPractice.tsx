@@ -1,13 +1,11 @@
 import { useMemo, useState } from 'react';
 import { CT_S100 } from '../../domain/instrument';
 import { pitchToMidi } from '../../domain/notes';
-import type { Song } from '../../domain/song';
+import { FINGER_NAMES, type Song } from '../../domain/song';
 import { Keyboard, type KeyHighlight } from '../keyboard/Keyboard';
 import { rangeForNotes } from '../keyboard/range';
 import { StaffNotation } from '../staff/StaffNotation';
 import { useSongPlayer } from './useSongPlayer';
-
-const FINGER_NAMES = ['', 'thumb', 'index', 'middle', 'ring', 'pinky'];
 
 export function SongPractice({ song }: { song: Song }) {
   const [bpm, setBpm] = useState(60);
