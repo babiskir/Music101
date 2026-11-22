@@ -3,7 +3,7 @@
 ## TODO: revisit the lesson folder format
 
 Lessons currently live in `src/lessons/<lesson-id>/<LessonName>.tsx` and are registered by hand in
-`src/lessons/registry.ts` (dropdown order = learning order). Each lesson is a React component that owns
+`src/lessons/registry.ts` (Lessons menu order = learning order). Each lesson is a React component that owns
 its layout and composes widgets from `src/features/`. This was a first guess; things to reconsider:
 
 - Should lessons be pure data (lesson text + exercises) rendered by a few shared layouts, instead of

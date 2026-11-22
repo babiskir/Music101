@@ -149,3 +149,26 @@ button.link { background: none; border: none; padding: 0; color: var(--accent); 
 .piano-bar .last-note { margin-left: auto; font-size: 1.1rem; min-width: 5em; text-align: right; }
 .piano-bar-error { color: #ff8a8a; flex-basis: 100%; font-size: 0.9rem; }
 .hint-box.win { border-left-color: #3ddc84; }
+
+/* Menu bar */
+.menubar { position: sticky; top: 0; z-index: 50; display: flex; align-items: center; gap: 12px; padding: 6px 8px; margin: -16px -16px 0; background: #1a1d23; border-bottom: 1px solid #2c313b; }
+.menubar-brand { font-weight: bold; font-size: 1.1rem; padding: 0 8px; white-space: nowrap; }
+.menubar-menus { display: flex; flex-wrap: wrap; gap: 2px; }
+.menu { position: relative; }
+.menu-trigger { background: none; border: none; padding: 6px 12px; border-radius: 6px; }
+.menu-trigger:hover, .menu-trigger.open { background: #2c313b; }
+.menu-panel { position: absolute; top: calc(100% + 4px); left: 0; min-width: 270px; max-height: 70vh; overflow-y: auto; background: var(--card); border: 1px solid #3a404c; border-radius: 8px; padding: 4px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5); }
+.menu-panel.right { left: auto; right: 0; }
+.menu-item { display: block; width: 100%; text-align: left; background: none; border: none; border-radius: 6px; padding: 7px 10px; color: var(--text); text-decoration: none; font: inherit; cursor: pointer; }
+.menu-item:hover:not(:disabled), .menu-item:focus-visible { background: #2c313b; outline: none; }
+.menu-item.current { color: var(--accent); font-weight: bold; }
+.menu-item:disabled { opacity: 0.4; cursor: default; }
+.menu-sep { height: 1px; background: #2c313b; margin: 4px 6px; }
+.menu-heading { padding: 6px 10px 2px; color: var(--muted); font-size: 0.8rem; }
+
+.lesson-title { margin: 0 0 4px; font-size: 1.4rem; }
+.lesson-title small { color: var(--muted); font-weight: normal; font-size: 0.8rem; margin-left: 8px; }
+.page-head { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.page-head h1 { margin: 0; font-size: 1.3rem; }
+.help h3 { margin-top: 18px; }
+.help ul { padding-left: 20px; }

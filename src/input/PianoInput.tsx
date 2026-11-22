@@ -28,7 +28,7 @@ interface PianoContextValue {
   connectMic(): Promise<void>;
   disconnect(): void;
   subscribe(handler: (e: NoteEvent) => void): () => void;
-  /** The shared microphone (used by the Mic check lesson for levels and settings). */
+  /** The shared microphone (used by the Microphone & input settings page for levels and settings). */
   mic: Mic;
 }
 

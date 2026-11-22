@@ -7,7 +7,7 @@ import { Keyboard, type KeyHighlight } from '../../features/keyboard/Keyboard';
 const SOUND_GATE_DB = -45;
 
 /** Layout: status + meter on top, big detected note, live keyboard, device picker. */
-export function MicCheck() {
+export function MicSettings() {
   const mic = usePiano().mic; // shared with the rest of the app, so it keeps running between lessons
   const { state, devices } = mic;
   const listening = state.status === 'listening';
@@ -22,7 +22,7 @@ export function MicCheck() {
 
   return (
     <section className="card">
-      <h2>Mic check <small>nothing is recorded or sent anywhere</small></h2>
+      <h2>Microphone &amp; input <small>nothing is recorded or sent anywhere</small></h2>
 
       <div className="row">
         <button className="primary" onClick={() => (listening ? mic.stop() : mic.start())}>

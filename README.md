@@ -23,7 +23,7 @@ Other scripts: `npm run build` (typecheck + production build), `npm run typechec
 
 ## Lessons
 
-Pick a lesson from the dropdown (top right). Each one lists what you can do afterwards, and you can tick it
+Use the menu bar at the top: **Lessons** (pick a lesson, mark it done, go to the next), **Keyboard** (connect / disconnect, microphone settings), **Settings** (microphone & input, reset saved data) and **Help** (connecting your keyboard). Each lesson lists what you can do afterwards, and you can tick it
 as done. Open one directly with `?lesson=<id>`, e.g. `http://localhost:5173/?lesson=reading-notes`.
 
 | # | Lesson (id) | What you do |
@@ -34,7 +34,6 @@ as done. Open one directly with `?lesson=<id>`, e.g. `http://localhost:5173/?les
 | 4 | Feel the beat (`rhythm-basics`) | Count along with the metronome; rhythm patterns on a real staff |
 | 5 | Reading notes (`reading-notes`) | A note appears on the staff, click the matching key |
 | 6 | First songs (`first-songs`) | Ode to Joy and Twinkle Twinkle: step through or play along with sheet music, fingering and count-in |
-| 7 | Mic check (`mic-check`) | Test the input, see the level, and see which note the app hears |
 
 Lessons 1, 2, 3, 5 and 6 work with your connected keyboard (see below): answer, drill and play on the real piano.
 
@@ -54,7 +53,7 @@ mode (metronome) are still just a guide; they don't grade your timing yet.
 
 ## Using the microphone / piano cable
 
-The **Mic check** lesson can listen to the CT-S100 and show the note it hears (one note at a time).
+**Settings → Microphone & input…** (or the Keyboard menu) can listen to the CT-S100 and show the note it hears (one note at a time).
 
 - **Piano cable into the PC's mic jack:** works well, but plugging into the piano's output jack **mutes
   the piano's own speakers**. Tick **Hear it** to play the signal through the PC's speakers or headphones
@@ -82,7 +81,8 @@ settings (hand, tempo, options). **Reset everything** at the bottom of the page 
 ```
 src/
   main.tsx              entry point
-  app/                  App shell (lesson dropdown, goals, progress) + global styles
+  app/                  App shell: MenuBar (Lessons / Keyboard / Settings / Help), goals, progress, global styles
+  pages/                non-lesson screens reached from the menus: microphone & input settings, help
   domain/               pure TS, no React/DOM: notes & MIDI math, Song types, Instrument (CT-S100)
   data/songs/           songs as data (add a file + register it in index.ts)
   input/                PianoInput (shared keyboard connection: USB MIDI or mic), PianoBar,
@@ -90,7 +90,7 @@ src/
   audio/                Web Audio: click/note sounds, MetronomeEngine, microphone input,
                         YIN pitch detection, noise gate (AudioWorklet), input-device helpers
   lib/                  storage (localStorage wrapper), usePersistentState, lifetime quiz stats
-  lessons/              one folder per lesson; registry.ts = dropdown order; useQuiz = shared quiz loop
+  lessons/              one folder per lesson; registry.ts = menu order; useQuiz = shared quiz loop
   features/             reusable widgets that lessons compose
     keyboard/           clickable Keyboard + range helper
     staff/              StaffNotation (real sheet music via VexFlow)
@@ -105,8 +105,10 @@ Rule of thumb: `domain`, `lib` and `audio` never import from `features` or `less
 
 - **A song:** create `src/data/songs/<name>.ts` exporting a `Song` (pitches like `"C4"`, length in beats,
   finger 1–5), then add it to the array in `src/data/songs/index.ts`.
+- **A page** (settings/help-style screen): add a folder in `src/pages/`, register it in `src/pages/registry.ts`, and
+  link to it from a menu in `src/app/App.tsx`. Open one directly with `?page=<id>` (e.g. `?page=mic-settings`).
 - **A lesson:** add a folder in `src/lessons/`, export a component, and register it (with title, summary and
-  goals) in `src/lessons/registry.ts`. Order in the registry is the order in the dropdown.
+  goals) in `src/lessons/registry.ts`. Order in the registry is the order in the Lessons menu.
 
 ## Ideas for later
 
