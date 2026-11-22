@@ -3,6 +3,7 @@ import { playNote } from '../../audio/sounds';
 import { midiToPitch } from '../../domain/notes';
 import { FINGER_NAMES } from '../../domain/song';
 import { Keyboard, type KeyHighlight } from '../../features/keyboard/Keyboard';
+import { usePlayedKey } from '../../input/PianoInput';
 import { oneOf } from '../../lib/storage';
 import { usePersistentState } from '../../lib/usePersistentState';
 import { FingerDrill } from './FingerDrill';
@@ -46,6 +47,9 @@ function PlaceYourHand({ hand }: { hand: Hand }) {
   const pos = POSITIONS[hand];
   const highlights: Record<number, KeyHighlight> = {};
   for (const f of FINGERS) highlights[pos.keys[f]] = { kind: 'current', label: String(f) };
+
+  const played = usePlayedKey();
+  if (played !== null) highlights[played] = { kind: 'correct' }; // the key you just played on your keyboard
 
   const hear = (midi: number) => playNote(midi, getAudioContext().currentTime, 0.7);
 

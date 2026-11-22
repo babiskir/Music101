@@ -36,6 +36,22 @@ as done. Open one directly with `?lesson=<id>`, e.g. `http://localhost:5173/?les
 | 6 | First songs (`first-songs`) | Ode to Joy and Twinkle Twinkle: step through or play along with sheet music, fingering and count-in |
 | 7 | Mic check (`mic-check`) | Test the input, see the level, and see which note the app hears |
 
+Lessons 1, 2, 3, 5 and 6 work with your connected keyboard (see below): answer, drill and play on the real piano.
+
+## Connecting your keyboard
+
+The **🎹 Keyboard** bar under the title connects the app to your CT-S100 once; every lesson then reacts to
+the keys you really press (quizzes check your answer, finger drills advance, songs wait for you and count
+slips, the keyboard on screen lights up what you play). Two ways to connect:
+
+- **USB (MIDI)**: plug the CT-S100's USB port into the PC. Exact notes, no guessing, and the piano's own
+  speakers keep working. (Edge/Chrome ask for MIDI permission.)
+- **Cable / microphone**: the piano's output into the PC's mic jack (or a microphone near the piano). The
+  app detects the pitch of the single note you play, so play one note at a time.
+
+It reconnects automatically next time if the browser already granted permission. Songs in *play along*
+mode (metronome) are still just a guide; they don't grade your timing yet.
+
 ## Using the microphone / piano cable
 
 The **Mic check** lesson can listen to the CT-S100 and show the note it hears (one note at a time).
@@ -69,6 +85,8 @@ src/
   app/                  App shell (lesson dropdown, goals, progress) + global styles
   domain/               pure TS, no React/DOM: notes & MIDI math, Song types, Instrument (CT-S100)
   data/songs/           songs as data (add a file + register it in index.ts)
+  input/                PianoInput (shared keyboard connection: USB MIDI or mic), PianoBar,
+                        noteTracker (pitch frames -> key presses), midi parsing
   audio/                Web Audio: click/note sounds, MetronomeEngine, microphone input,
                         YIN pitch detection, noise gate (AudioWorklet), input-device helpers
   lib/                  storage (localStorage wrapper), usePersistentState, lifetime quiz stats
@@ -92,8 +110,8 @@ Rule of thumb: `domain`, `lib` and `audio` never import from `features` or `less
 
 ## Ideas for later
 
-- **Web MIDI** over the CT-S100's USB port: exact key presses (no pitch guessing), and the piano's speakers
-  keep working. Would make the quizzes and songs fully interactive.
+- Grade timing in play-along mode and the rhythm lesson (the key-press events already carry the moment of each note).
+- Chords: the microphone path detects one note at a time; USB MIDI already delivers every key.
 - Left-hand and two-hand songs, rests, chords.
 - Looping a few bars and auto speed-up in song practice.
 - Revisit the lesson folder format (see `docs/NOTES.md`).

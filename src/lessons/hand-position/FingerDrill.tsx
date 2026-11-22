@@ -3,6 +3,7 @@ import { getAudioContext } from '../../audio/audioContext';
 import { playNote } from '../../audio/sounds';
 import type { Finger } from '../../domain/song';
 import { Keyboard, type KeyHighlight } from '../../features/keyboard/Keyboard';
+import { usePianoNotes } from '../../input/PianoInput';
 import { isBoolean, oneOf } from '../../lib/storage';
 import { usePersistentState } from '../../lib/usePersistentState';
 import { POSITIONS, type Hand } from './positions';
@@ -38,8 +39,8 @@ export function FingerDrill({ hand }: { hand: Hand }) {
     setWrongKey(null);
   };
 
-  const press = (midi: number) => {
-    playNote(midi, getAudioContext().currentTime, 0.5);
+  const press = (midi: number, fromPiano = false) => {
+    if (!fromPiano) playNote(midi, getAudioContext().currentTime, 0.5);
     if (done) return;
     if (midi === pos.keys[drill.fingers[step]]) {
       setStep(step + 1);
@@ -50,6 +51,8 @@ export function FingerDrill({ hand }: { hand: Hand }) {
       timer.current = window.setTimeout(() => setWrongKey(null), 400);
     }
   };
+
+  usePianoNotes((e) => press(e.midi, true));
 
   const highlights: Record<number, KeyHighlight> = {};
   if (showHint && !done) highlights[pos.keys[drill.fingers[step]]] = { kind: 'current' };
@@ -71,7 +74,7 @@ export function FingerDrill({ hand }: { hand: Hand }) {
         ))}
       </div>
 
-      <Keyboard from={pos.range[0]} to={pos.range[1]} highlights={highlights} onKeyPress={press} />
+      <Keyboard from={pos.range[0]} to={pos.range[1]} highlights={highlights} onKeyPress={(m) => press(m)} />
 
       <p className="explain feedback">
         {done

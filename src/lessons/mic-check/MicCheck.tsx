@@ -1,5 +1,5 @@
 import { classifyInput, inputHint } from '../../audio/micDevices';
-import { useMicrophone } from '../../audio/useMicrophone';
+import { usePiano } from '../../input/PianoInput';
 import { CT_S100 } from '../../domain/instrument';
 import { midiToPitch } from '../../domain/notes';
 import { Keyboard, type KeyHighlight } from '../../features/keyboard/Keyboard';
@@ -8,7 +8,7 @@ const SOUND_GATE_DB = -45;
 
 /** Layout: status + meter on top, big detected note, live keyboard, device picker. */
 export function MicCheck() {
-  const mic = useMicrophone();
+  const mic = usePiano().mic; // shared with the rest of the app, so it keeps running between lessons
   const { state, devices } = mic;
   const listening = state.status === 'listening';
 

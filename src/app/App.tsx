@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { lessons } from '../lessons/registry';
 import { useProgress } from '../lessons/progress';
+import { PianoBar } from '../input/PianoBar';
 import { storage } from '../lib/storage';
 
 function loadLessonId(): string {
@@ -46,6 +47,8 @@ export function App() {
           </select>
         </label>
       </header>
+
+      <PianoBar onOpenMicSettings={() => choose('mic-check')} />
 
       <section className="card goals">
         <p className="class-summary">{current.summary}</p>

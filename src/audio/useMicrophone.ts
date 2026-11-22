@@ -24,6 +24,13 @@ export interface MicState {
   note: { midi: number; cents: number; freq: number } | null;
 }
 
+/** One analysis frame (~20 per second): the level and, if there is a clear single pitch, its MIDI note. */
+export interface MicFrame {
+  db: number;
+  midi: number | null;
+  now: number;
+}
+
 interface Monitor {
   on: boolean;
   volume: number;
@@ -57,7 +64,9 @@ function applyCleanup(
  * Opens the microphone and reports level + detected pitch ~20 times per second.
  * Settings (noise gate, hum filter, "Hear it" volume, chosen input) are remembered between visits.
  */
-export function useMicrophone() {
+export function useMicrophone(options: { onFrame?: (frame: MicFrame) => void } = {}) {
+  const onFrameRef = useRef(options.onFrame);
+  onFrameRef.current = options.onFrame;
   const [state, setState] = useState<MicState>(IDLE);
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const resources = useRef<{
@@ -265,6 +274,7 @@ export function useMicrophone() {
             lastMidi = null;
             stableCount = 0;
           }
+          onFrameRef.current?.({ db, midi: note ? note.midi : null, now });
           setState({
             status: 'listening',
             deviceLabel: label,

@@ -5,6 +5,7 @@ import { isBlackKey, midiToPitch } from '../../domain/notes';
 import type { TimedNote } from '../../domain/song';
 import { Keyboard, type KeyHighlight } from '../../features/keyboard/Keyboard';
 import { StaffNotation } from '../../features/staff/StaffNotation';
+import { usePiano, usePianoNotes } from '../../input/PianoInput';
 import { oneOf } from '../../lib/storage';
 import { formatLifetime, useLifetimeStats } from '../../lib/useLifetimeStats';
 import { usePersistentState } from '../../lib/usePersistentState';
@@ -44,8 +45,10 @@ export function ReadingNotes() {
     setFeedback(null);
   };
 
-  const press = (midi: number) => {
-    playNote(midi, getAudioContext().currentTime, 0.7);
+  const piano = usePiano();
+  // A key on the real keyboard already makes its own sound; only synthesize for on-screen clicks.
+  const press = (midi: number, fromPiano = false) => {
+    if (!fromPiano) playNote(midi, getAudioContext().currentTime, 0.7);
     if (feedback?.ok) return; // already answered, waiting for next note
     const ok = midi === target;
     record(ok);
@@ -59,6 +62,8 @@ export function ReadingNotes() {
     }
   };
 
+  usePianoNotes((e) => press(e.midi, true));
+
   const note: TimedNote = { pitch: midiToPitch(target), beats: 4, startBeat: 0 };
   const highlights: Record<number, KeyHighlight> = {};
   if (feedback) highlights[feedback.midi] = { kind: feedback.ok ? 'correct' : 'wrong' };
@@ -70,9 +75,9 @@ export function ReadingNotes() {
         <div className="staff-narrow">
           <StaffNotation notes={[note]} beatsPerBar={4} activeIndex={-1} maxBarsPerLine={1} />
         </div>
-        <Keyboard from={MIDDLE_C} to={top} highlights={highlights} onKeyPress={press} />
+        <Keyboard from={MIDDLE_C} to={top} highlights={highlights} onKeyPress={(m) => press(m)} />
         <p className="explain feedback">
-          {feedback === null && 'Which key is this note?'}
+          {feedback === null && (piano.connected ? 'Play this note on your keyboard.' : 'Which key is this note?')}
           {feedback?.ok && `Correct! That's ${note.pitch}.`}
           {feedback && !feedback.ok && `Not quite: you pressed ${midiToPitch(feedback.midi)}. Try again.`}
         </p>

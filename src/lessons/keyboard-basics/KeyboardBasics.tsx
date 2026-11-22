@@ -3,6 +3,7 @@ import { getAudioContext } from '../../audio/audioContext';
 import { playNote } from '../../audio/sounds';
 import { CT_S100 } from '../../domain/instrument';
 import { Keyboard, type KeyHighlight } from '../../features/keyboard/Keyboard';
+import { usePlayedKey } from '../../input/PianoInput';
 
 type Mode =
   | { kind: 'groups' }
@@ -47,6 +48,9 @@ export function KeyboardBasics() {
       highlights[m] = { kind: 'current' };
     }
   }
+
+  const played = usePlayedKey();
+  if (played !== null) highlights[played] = { kind: 'correct' }; // the key you just played on your keyboard
 
   const hear = (midi: number) => playNote(midi, getAudioContext().currentTime, 0.8);
 

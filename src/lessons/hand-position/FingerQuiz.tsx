@@ -3,6 +3,7 @@ import { playNote } from '../../audio/sounds';
 import { midiToPitch } from '../../domain/notes';
 import { FINGER_NAMES, type Finger } from '../../domain/song';
 import { Keyboard, type KeyHighlight } from '../../features/keyboard/Keyboard';
+import { usePianoNotes } from '../../input/PianoInput';
 import { oneOf } from '../../lib/storage';
 import { formatLifetime } from '../../lib/useLifetimeStats';
 import { usePersistentState } from '../../lib/usePersistentState';
@@ -25,10 +26,12 @@ export function FingerQuiz({ hand }: { hand: Hand }) {
 
   const hear = (midi: number) => playNote(midi, getAudioContext().currentTime, 0.6);
 
-  const pressKey = (midi: number) => {
-    hear(midi);
+  const pressKey = (midi: number, fromPiano = false) => {
+    if (!fromPiano) hear(midi); // the real keyboard makes its own sound
     if (direction === 'finger-to-key') quiz.answer(midi === targetKey, midi);
   };
+
+  usePianoNotes((e) => pressKey(e.midi, true));
 
   const pickFinger = (f: Finger) => {
     if (direction !== 'key-to-finger') return;
@@ -72,7 +75,7 @@ export function FingerQuiz({ hand }: { hand: Hand }) {
       </div>
 
       <p className="prompt">{prompt}</p>
-      <Keyboard from={pos.range[0]} to={pos.range[1]} highlights={highlights} onKeyPress={pressKey} />
+      <Keyboard from={pos.range[0]} to={pos.range[1]} highlights={highlights} onKeyPress={(m) => pressKey(m)} />
 
       {direction === 'key-to-finger' && (
         <div className="answers">

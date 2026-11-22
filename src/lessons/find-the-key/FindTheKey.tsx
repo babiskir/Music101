@@ -3,6 +3,7 @@ import { getAudioContext } from '../../audio/audioContext';
 import { playNote } from '../../audio/sounds';
 import { describePitch, isBlackKey, pitchClassLabel } from '../../domain/notes';
 import { Keyboard, type KeyHighlight } from '../../features/keyboard/Keyboard';
+import { usePianoNotes } from '../../input/PianoInput';
 import { isBoolean, oneOf } from '../../lib/storage';
 import { formatLifetime } from '../../lib/useLifetimeStats';
 import { usePersistentState } from '../../lib/usePersistentState';
@@ -67,10 +68,12 @@ export function FindTheKey() {
 
   const hear = (midi: number) => playNote(midi, getAudioContext().currentTime, 0.7);
 
-  const pressKey = (midi: number) => {
-    hear(midi);
+  const pressKey = (midi: number, fromPiano = false) => {
+    if (!fromPiano) hear(midi); // the real keyboard makes its own sound
     if (mode === 'name-to-key') quiz.answer(midi === target, midi);
   };
+
+  usePianoNotes((e) => pressKey(e.midi, true));
 
   const pressName = (pc: number) => quiz.answer(pc === target % 12, pc);
 
@@ -120,7 +123,7 @@ export function FindTheKey() {
 
       <p className="prompt">{prompt}</p>
 
-      <Keyboard from={range[0]} to={range[1]} highlights={highlights} onKeyPress={pressKey} />
+      <Keyboard from={range[0]} to={range[1]} highlights={highlights} onKeyPress={(m) => pressKey(m)} />
 
       {mode === 'key-to-name' && (
         <div className="answers">

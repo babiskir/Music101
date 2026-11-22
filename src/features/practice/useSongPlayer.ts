@@ -64,10 +64,10 @@ export function useSongPlayer(song: Song, { bpm, hearNotes }: Options) {
   );
 
   const goTo = useCallback(
-    (index: number) => {
+    (index: number, silent = false) => {
       const clamped = Math.min(notes.length - 1, Math.max(0, index));
       setActiveIndex(clamped);
-      preview(clamped);
+      if (!silent) preview(clamped);
     },
     [notes.length, preview],
   );
@@ -89,6 +89,8 @@ export function useSongPlayer(song: Song, { bpm, hearNotes }: Options) {
     playingAlong: running,
     next: () => goTo(activeIndex + 1),
     prev: () => goTo(activeIndex - 1),
+    /** Step forward without playing the reference sound (used when the real keyboard made the sound). */
+    nextSilent: () => goTo(activeIndex + 1, true),
     goTo,
     reset: () => {
       stopPlayAlong();

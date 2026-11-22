@@ -12,7 +12,7 @@ export const lessons: LessonDef[] = [
   {
     id: 'keyboard-basics',
     title: 'Meet the keyboard',
-    summary: 'Black-key groups, middle C, and where each note name lives. Click keys to hear them.',
+    summary: 'Black-key groups, middle C, and where each note name lives. Click keys to hear them, or play them on your keyboard and watch them light up.',
     goals: [
       'Spot groups of 2 and 3 black keys instantly',
       'Find any C, and middle C, on the keyboard',
@@ -23,7 +23,7 @@ export const lessons: LessonDef[] = [
   {
     id: 'find-the-key',
     title: 'Find the key',
-    summary: 'Given a note name, find its key, and the other way round. Landmark hints included.',
+    summary: 'Given a note name, find its key, and the other way round. Answer by clicking, or by pressing the key on your connected keyboard.',
     goals: [
       'Go from a note name (like F4) to the right key without counting',
       'Go from a highlighted key to its name',
@@ -34,7 +34,7 @@ export const lessons: LessonDef[] = [
   {
     id: 'hand-position',
     title: 'Hand & fingers',
-    summary: 'Where to put each finger, which finger plays which key, and a few finger drills.',
+    summary: 'Where to put each finger, which finger plays which key, and a few finger drills. Play the drills on your real keyboard.',
     goals: [
       'Place your right (and left) hand in five-finger position',
       'Know the finger numbers: 1 = thumb … 5 = pinky',
@@ -57,7 +57,7 @@ export const lessons: LessonDef[] = [
   {
     id: 'reading-notes',
     title: 'Reading notes',
-    summary: 'A note appears on the staff: click the matching key. Builds sight-reading.',
+    summary: 'A note appears on the staff: press the matching key on your keyboard (or click it). Builds sight-reading.',
     goals: [
       'Read notes on the treble staff, from middle C up',
       'Connect a note on paper to a key on the keyboard',
@@ -68,7 +68,7 @@ export const lessons: LessonDef[] = [
   {
     id: 'first-songs',
     title: 'First songs',
-    summary: 'Right hand, five fingers, one position. Step through or play along.',
+    summary: 'Right hand, five fingers, one position. With a connected keyboard the song waits for you and counts your slips; or play along with the metronome.',
     goals: [
       'Play a whole melody with one hand position',
       'Follow sheet music, fingering and the metronome together',
