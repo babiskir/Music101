@@ -1,6 +1,9 @@
 import { midiToName, pitchToMidi } from '../../domain/notes';
+import { fingerPhrase } from '../../guide/targets';
 import { withTiming, type Song, type TimedNote } from '../../domain/song';
 import type { Step, Target } from '../../guide/types';
+import { jingleBells } from '../../data/songs/jingleBells';
+import { maryHadALittleLamb } from '../../data/songs/maryHadALittleLamb';
 import { odeToJoy } from '../../data/songs/odeToJoy';
 import { twinkleTwinkle } from '../../data/songs/twinkleTwinkle';
 import type { LessonDef } from '../types';
@@ -12,7 +15,7 @@ function toTarget(n: TimedNote): Target {
     ref: midi,
     finger: n.finger,
     beats: n.beats,
-    label: n.finger ? `${midiToName(midi)} · finger ${n.finger}` : midiToName(midi),
+    label: n.finger ? `${midiToName(midi)} · ${fingerPhrase(n.finger)}` : midiToName(midi),
     chip: midiToName(midi),
   };
 }
@@ -29,15 +32,17 @@ function barsOf(notes: TimedNote[], beatsPerBar: number, fromBar: number, toBar:
  * Learn a song in pieces: two bars at a time with everything lit up, then four bars with only the
  * sheet music and finger numbers, then the whole song from the sheet.
  */
+const WORDS = ['one', 'two', 'three', 'four', 'five', 'six'];
+
 export function songLesson(song: Song, summary: string): LessonDef {
   const notes = withTiming(song);
   const bars = Math.ceil((notes[notes.length - 1].startBeat + notes[notes.length - 1].beats) / song.beatsPerBar);
 
-  const piece = (from: number, to: number, helped: boolean): Step => {
+  const piece = (from: number, to: number, helped: boolean, title: string): Step => {
     const chunk = barsOf(notes, song.beatsPerBar, from, to).map((n) => toTarget(n));
     return {
       kind: 'play',
-      title: from === to ? `Bar ${from}` : `Bars ${from}–${to}`,
+      title,
       body: helped
         ? 'The key to play is lit, with the finger number.'
         : 'Read the notes from the sheet. The keys are not lit; there is a hint if you get stuck.',
@@ -52,20 +57,22 @@ export function songLesson(song: Song, summary: string): LessonDef {
     {
       kind: 'info',
       title: `Get ready: ${song.title}`,
-      body: [song.handPosition, ...song.tips.slice(0, 2)],
+      body: [song.handPosition, 'Learn it a few bars at a time. Slow and correct beats fast and wrong.'],
     },
   ];
 
-  for (let b = 1; b <= bars; b += 4) {
+  // Pieces are named in words ("Phrase two, second half"), never with numerals.
+  for (let b = 1, phrase = 0; b <= bars; b += 4, phrase++) {
+    const name = `Phrase ${WORDS[phrase] ?? 'next'}`;
     const firstEnd = Math.min(b + 1, bars);
-    steps.push(piece(b, firstEnd, true));
+    steps.push(piece(b, firstEnd, true, firstEnd < bars ? `${name}, first half` : name));
     if (firstEnd < bars) {
       const secondEnd = Math.min(b + 3, bars);
-      steps.push(piece(firstEnd + 1, secondEnd, true));
-      steps.push(piece(b, secondEnd, false));
+      steps.push(piece(firstEnd + 1, secondEnd, true, `${name}, second half`));
+      steps.push(piece(b, secondEnd, false, `${name}, all together`));
     }
   }
-  if (bars > 4) steps.push({ ...piece(1, bars, false), title: `The whole song: ${song.title}` });
+  if (bars > 4) steps.push({ ...piece(1, bars, false, `The whole song: ${song.title}`) });
 
   return {
     id: song.id,
@@ -80,6 +87,14 @@ export function songLesson(song: Song, summary: string): LessonDef {
   };
 }
 
+export const maryLesson = songLesson(
+  maryHadALittleLamb,
+  'A tune that mostly moves by steps, with long and short notes. A gentle start before Ode to Joy.',
+);
+export const jingleBellsLesson = songLesson(
+  jingleBells,
+  'The chorus everyone knows, with a dotted note and a big leap at the end.',
+);
 export const odeToJoyLesson = songLesson(odeToJoy, 'Your first song: Beethoven, right hand, five fingers, no hand movement.');
 export const twinkleLesson = songLesson(
   twinkleTwinkle,

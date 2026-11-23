@@ -20,6 +20,10 @@ interface Props {
   onSelect?: (index: number) => void;
   /** Cap on bars per line (default: as many as fit, up to 4). */
   maxBarsPerLine?: number;
+  /** Show the time signature (default). Turn off for a single note. */
+  timeSignature?: boolean;
+  /** Text printed under each note, by note index (e.g. its letter). Undefined entries print nothing. */
+  labels?: (string | undefined)[];
 }
 
 const LINE_HEIGHT = 150;
@@ -52,7 +56,16 @@ function toKey(pitch: string): string {
 }
 
 /** Real sheet music (treble clef) for the song, with the current note highlighted. */
-export function StaffNotation({ notes, beatsPerBar, activeIndex, onSelect, maxBarsPerLine = 4 }: Props) {
+export function StaffNotation({
+  notes,
+  beatsPerBar,
+  activeIndex,
+  onSelect,
+  maxBarsPerLine = 4,
+  timeSignature = true,
+  labels,
+}: Props) {
+  const labelsKey = labels?.map((l) => l ?? '').join('|') ?? '';
   const containerRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
   const onSelectRef = useRef(onSelect);
@@ -91,7 +104,7 @@ export function StaffNotation({ notes, beatsPerBar, activeIndex, onSelect, maxBa
       const firstEver = barIdx === 0;
 
       // Equal-width bars; the clef (and time signature on line 1) add width to the first bar.
-      const lineExtra = CLEF_EXTRA + (line === 0 ? TIME_SIG_EXTRA : 0);
+      const lineExtra = CLEF_EXTRA + (line === 0 && timeSignature ? TIME_SIG_EXTRA : 0);
       const baseWidth = (width - 12 - lineExtra) / barsPerLine;
       const staveWidth = baseWidth + (firstOnLine ? lineExtra : 0);
       const x = firstOnLine ? 1 : 1 + lineExtra + col * baseWidth;
@@ -99,7 +112,7 @@ export function StaffNotation({ notes, beatsPerBar, activeIndex, onSelect, maxBa
 
       const stave = new Stave(x, y, staveWidth);
       if (firstOnLine) stave.addClef('treble');
-      if (firstEver) stave.addTimeSignature(`${beatsPerBar}/4`);
+      if (firstEver && timeSignature) stave.addTimeSignature(`${beatsPerBar}/4`);
       if (barIdx === bars.length - 1) stave.setEndBarType(Barline.type.END);
       stave.setStyle({ strokeStyle: INK, fillStyle: INK });
       stave.setContext(ctx).draw();
@@ -110,11 +123,10 @@ export function StaffNotation({ notes, beatsPerBar, activeIndex, onSelect, maxBa
         if (dots) Dot.buildAndAttach([sn], { all: true });
         if (note.pitch.includes('#')) sn.addModifier(new Accidental('#'));
         else if (/^[A-G]b/.test(note.pitch)) sn.addModifier(new Accidental('b'));
-        if (note.finger) {
+        const text = labels?.[index] ?? (note.finger ? String(note.finger) : undefined);
+        if (text) {
           sn.addModifier(
-            new Annotation(String(note.finger))
-              .setFont('Arial', 16, 'bold')
-              .setVerticalJustification(Annotation.VerticalJustify.BOTTOM),
+            new Annotation(text).setFont('Arial', 16, 'bold').setVerticalJustification(Annotation.VerticalJustify.BOTTOM),
           );
         }
         const color = index === activeIndex ? ACTIVE_COLOR : INK;
@@ -138,7 +150,7 @@ export function StaffNotation({ notes, beatsPerBar, activeIndex, onSelect, maxBa
         svg.addEventListener('click', () => onSelectRef.current?.(index));
       });
     });
-  }, [notes, beatsPerBar, activeIndex, width, maxBarsPerLine]);
+  }, [notes, beatsPerBar, activeIndex, width, maxBarsPerLine, timeSignature, labelsKey]);
 
   return <div className="staff" ref={containerRef} aria-label="Sheet music" />;
 }

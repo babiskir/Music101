@@ -24,10 +24,10 @@ export function HelpPage({ openPage }: PageProps) {
         input. Choose <em>Keyboard → Disconnect</em> to stop that. The indicator at the top right shows the state.
       </p>
       <div className="row">
-        <button className="primary" onClick={() => void piano.connectMic()} disabled={piano.connected}>
+        <button className="primary" onClick={() => void piano.connectMic()} disabled={piano.source === 'mic'}>
           Connect: cable / microphone
         </button>
-        <button onClick={() => void piano.connectMidi()} disabled={piano.connected}>Connect: USB (MIDI)</button>
+        <button onClick={() => void piano.connectMidi()} disabled={piano.source === 'midi'}>Connect: USB (MIDI)</button>
         <button onClick={() => openPage('mic-settings')}>Microphone &amp; input settings…</button>
       </div>
 

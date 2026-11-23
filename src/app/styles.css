@@ -37,8 +37,6 @@ input[type='range'] { width: 100%; accent-color: var(--accent); }
 .grow { flex: 1 1 220px; }
 
 /* "Play X with finger Y" banner */
-.now { font-size: 1.4rem; min-height: 2.2rem; margin-bottom: 8px; }
-.now strong { color: var(--current); }
 .count-in { font-size: 2rem; font-weight: bold; color: var(--accent); }
 
 /* Keyboard */
@@ -57,7 +55,7 @@ input[type='range'] { width: 100%; accent-color: var(--accent); }
 .white.current, .black.current { background: var(--current); }
 .white.next, .black.next { background: var(--next); }
 .white.next { color: #fff; }
-.finger { font-size: 1.3rem; font-weight: bold; color: #111; position: absolute; top: 40%; }
+.finger { font-size: 0.8rem; font-weight: bold; color: #111; position: absolute; top: 40%; text-align: center; }
 .black .finger { position: static; color: #111; }
 .white.next .finger, .black.next .finger { color: #fff; }
 
@@ -94,7 +92,7 @@ input[type='range'] { width: 100%; accent-color: var(--accent); }
 /* Reading notes: staff + keyboard left, score right */
 .reading-layout { display: grid; grid-template-columns: 1fr 240px; gap: 16px; align-items: start; }
 .reading-main .keyboard { margin-top: 12px; height: 150px; }
-.staff-narrow { max-width: 420px; margin: 0 auto; }
+.staff-narrow { width: 100%; max-width: 420px; margin: 0 auto; } /* width: 100% so a centered flex card can't squash the staff */
 .score { font-size: 2rem; margin: 0 0 12px; }
 .reading-side ul { padding-left: 18px; margin: 0 0 12px; font-size: 0.9rem; }
 
@@ -108,7 +106,6 @@ input[type='range'] { width: 100%; accent-color: var(--accent); }
   .reading-layout, .rhythm-layout { grid-template-columns: 1fr; }
 }
 .card > h3:first-child { margin-top: 0; }
-.now .hint { font-size: 1rem; }
 
 /* Lesson shell */
 .class-summary { margin: 0 0 8px; }
@@ -126,7 +123,7 @@ input[type='range'] { width: 100%; accent-color: var(--accent); }
 .drill-seq { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
 .seq-chip { min-width: 36px; text-align: center; padding: 6px 8px; border-radius: 8px; background: #2c313b; font-weight: bold; font-size: 1.1rem; }
 .seq-chip.done { background: #1f5c3a; color: #bfeed2; }
-.seq-chip.now { background: var(--current); color: #111; }
+.seq-chip.current { background: var(--current); color: #111; }
 
 /* Mic check */
 .meter { position: relative; height: 22px; background: #2c313b; border-radius: 11px; overflow: hidden; margin: 12px 0 4px; }
@@ -181,7 +178,7 @@ button.link { background: none; border: none; padding: 0; color: var(--accent); 
 .dots { display: flex; gap: 8px; margin-top: 8px; }
 .dot2 { width: 12px; height: 12px; border-radius: 50%; background: #2c313b; }
 .dot2.done { background: #3ddc84; }
-.dot2.now { background: var(--current); }
+.dot2.current { background: var(--current); }
 .count-box { min-height: 3.2rem; display: flex; align-items: center; }
 .finished h2 { margin-top: 0; }
 .guide .keyboard { margin-top: 10px; }
@@ -194,3 +191,11 @@ button.link { background: none; border: none; padding: 0; color: var(--accent); 
 .dot-on, .dot-off { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
 .dot-on { background: #3ddc84; }
 .dot-off { background: #e0a526; }
+
+.count-box .beat-dots { margin: 0; }
+
+/* Choose step: big tap targets */
+.choices { justify-content: center; margin: 16px 0 8px; }
+.choices button { min-width: 140px; padding: 14px 20px; font-size: 1.3rem; }
+.choices button.wrong { background: #ff5d5d; border-color: #ff5d5d; color: #fff; }
+.choose-step .hear { margin: 8px 0; }

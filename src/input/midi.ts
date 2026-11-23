@@ -18,25 +18,40 @@ export interface MidiConnection {
 export async function connectMidi(
   onNote: (note: { midi: number; velocity: number }) => void,
   onInputs: (names: string[]) => void,
+  onError?: (message: string) => void,
 ): Promise<MidiConnection> {
   if (!('requestMIDIAccess' in navigator)) {
     throw new Error('This browser does not support Web MIDI. Use Edge or Chrome.');
   }
   const access = await navigator.requestMIDIAccess();
 
+  // A keyboard that switched itself off (Auto Power Off) can stay in the list as "disconnected": it must
+  // not count as connected. When it is switched on again, the browser reports a state change and we
+  // listen to it again.
   const attach = () => {
     const names: string[] = [];
     access.inputs.forEach((input) => {
+      if (input.state === 'disconnected') {
+        input.onmidimessage = null;
+        return;
+      }
       input.onmidimessage = (e) => {
         const note = parseNoteOn(e.data);
         if (note) onNote(note);
       };
+      // On Windows only one program can use a MIDI port at a time. If another program (or another tab of
+      // this app) has it, opening fails and no notes would ever arrive: say so instead of staying silent.
+      input.open?.()?.catch(() =>
+        onError?.(
+          `The keyboard "${input.name ?? 'MIDI input'}" is in use by another program or browser tab. Close the other one, then click the keyboard indicator to connect again.`,
+        ),
+      );
       names.push(input.name ?? 'MIDI input');
     });
     onInputs(names);
   };
   attach();
-  access.onstatechange = attach; // hot-plug
+  access.onstatechange = attach; // hot-plug and wake-up
 
   return {
     dispose() {

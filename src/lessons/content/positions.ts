@@ -27,7 +27,7 @@ export const POSITIONS: Record<Hand, HandPositionDef> = {
       5: pitchToMidi('G4'),
     },
     description:
-      'Thumb (1) on middle C, then one finger per white key going right: D, E, F, and the pinky (5) on G.',
+      'Thumb on middle C, then one finger per white key going right: index on D, middle on E, ring on F, and the pinky on G.',
   },
   left: {
     label: 'Left hand',
@@ -40,7 +40,7 @@ export const POSITIONS: Record<Hand, HandPositionDef> = {
       1: pitchToMidi('G3'),
     },
     description:
-      'Pinky (5) on the C one octave below middle C, then D, E, F, and the thumb (1) on G. It mirrors the right hand: thumbs meet in the middle.',
+      'Pinky on the C one octave below middle C, then ring on D, middle on E, index on F, and the thumb on G. It mirrors the right hand: the thumbs meet in the middle.',
   },
 };
 

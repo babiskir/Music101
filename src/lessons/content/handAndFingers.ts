@@ -1,5 +1,6 @@
 import type { Finger } from '../../domain/song';
 import type { KeyHighlight } from '../../features/keyboard/Keyboard';
+import { FINGER_NAMES } from '../../domain/song';
 import { fingerTarget } from '../../guide/targets';
 import type { Step } from '../../guide/types';
 import type { LessonDef } from '../types';
@@ -9,7 +10,7 @@ const targets = (hand: Hand, fingers: Finger[]) => () => fingers.map((f) => fing
 
 function handPicture(hand: Hand): Record<number, KeyHighlight> {
   const keys: Record<number, KeyHighlight> = {};
-  for (const f of FINGERS) keys[POSITIONS[hand].keys[f]] = { kind: 'current', label: String(f) };
+  for (const f of FINGERS) keys[POSITIONS[hand].keys[f]] = { kind: 'current', label: FINGER_NAMES[f] };
   return keys;
 }
 
@@ -20,14 +21,14 @@ const steps: Step[] = [
   {
     kind: 'info',
     title: 'Your right hand',
-    body: [right.description, 'The number on each lit key is the finger that rests there: 1 = thumb … 5 = pinky.'],
+    body: [right.description, 'The word on each lit key is the finger that rests there: thumb, index, middle, ring, pinky.'],
     list: POSTURE_TIPS,
     keyboard: { from: right.range[0], to: right.range[1], keys: handPicture('right') },
   },
   {
     kind: 'play',
     title: 'Thumb to pinky',
-    body: 'Press each key with the finger shown, one after the other.',
+    body: 'Press each key with the finger named, one after the other.',
     show: { keys: true, fingers: true },
     keyboard: right.range,
     targets: targets('right', [1, 2, 3, 4, 5]),
@@ -84,7 +85,7 @@ const steps: Step[] = [
   {
     kind: 'play',
     title: 'Left hand: pinky to thumb',
-    body: 'Going up the keyboard, the left hand goes from 5 down to 1.',
+    body: 'Going up the keyboard, the left hand goes from the pinky to the thumb.',
     show: { keys: true, fingers: true },
     keyboard: left.range,
     targets: targets('left', [5, 4, 3, 2, 1]),
@@ -106,7 +107,7 @@ export const handAndFingers: LessonDef = {
   summary: 'Where each finger goes, then drills with the keys lit up and without.',
   goals: [
     'Place your right and your left hand in five-finger position',
-    'Know the finger numbers: 1 = thumb … 5 = pinky',
+    'Know each finger by name: thumb, index, middle, ring, pinky',
     'Play any key in the position with the right finger, without looking',
   ],
   steps,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { letterTarget, quizTargets, staffTarget, whiteKeys } from './targets';
+import { fingerPhrase, fingerTarget, letterTarget, quizTargets, staffTarget, whiteKeys } from './targets';
 
 const OCTAVE_NUMBER = /\b[A-G][#b]?-?\d\b/; // "C4", "F#3": quizzes must never show these
 
@@ -25,6 +25,20 @@ describe('quiz prompts', () => {
         }
       }
     }
+  });
+
+  it('never uses a numeral in a prompt, hint or finger name', () => {
+    const position = { 1: 60, 2: 62, 3: 64, 4: 65, 5: 67 } as const;
+    const all = [
+      ...quizTargets(whiteKeys(36, 96), 100, 'mixed'),
+      ...([1, 2, 3, 4, 5] as const).map((f) => fingerTarget(position, f)),
+    ];
+    for (const t of all) {
+      for (const text of [t.label, t.chip, t.hint, typeof t.spoken === 'string' ? t.spoken : '']) {
+        expect(text ?? '').not.toMatch(/\d/);
+      }
+    }
+    expect([1, 2, 3, 4, 5].map((f) => fingerPhrase(f as 1))).toEqual(['thumb', 'index finger', 'middle finger', 'ring finger', 'pinky finger']);
   });
 
   it('never asks for the same pitch twice in a row', () => {

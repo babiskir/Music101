@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { MetronomeEngine } from '../audio/MetronomeEngine';
 import { getAudioContext } from '../audio/audioContext';
+import { playNote } from '../audio/sounds';
 import type { TimedNote } from '../domain/song';
 import { StaffNotation } from '../features/staff/StaffNotation';
 import { usePianoNotes } from '../input/PianoInput';
@@ -10,17 +11,23 @@ import type { RhythmStep } from './types';
 
 const RETRY_PAUSE_MS = 2800;
 const DONE_PAUSE_MS = 1800;
+const DEMO_NOTE = 76; // the pattern is demonstrated on a high, clear note
+const DEMO_LEAD_MS = 400;
+const DEMO_TAIL_MS = 900;
 
-function message(s: RhythmScore): string {
+function message(s: RhythmScore, received: number): string {
   switch (s.status) {
     case 'ok':
-      return `✓ Steady! Every note was within ${Math.round(s.windowMs)} ms of the beat.`;
+      return '✓ Steady! Every note was on the beat.';
     case 'missing':
-      return `I heard ${s.heard} of ${s.expected} notes. Play one key for every note on the sheet. Trying again…`;
+      if (received >= s.expected) {
+        return `I got ${received} key presses, but only ${s.heard} landed close enough to the pattern to count (the sheet has ${s.expected}). Start on the first note and keep with the click. Trying again…`;
+      }
+      return `I heard ${s.heard} note${s.heard === 1 ? '' : 's'}, but the sheet has ${s.expected}. Play one key for every note. Trying again…`;
     case 'extra':
-      return `I heard ${s.heard} notes but the sheet has ${s.expected}. Trying again…`;
+      return `I heard ${s.heard} notes, but the sheet has only ${s.expected}. Play one key for every note. Trying again…`;
     case 'uneven':
-      return `A bit uneven: one note was ${Math.round(s.maxDevMs)} ms off the beat. Trying again…`;
+      return 'A bit uneven: one note was too early or too late. Aim to land exactly on the beat. Trying again…';
   }
 }
 
@@ -42,10 +49,11 @@ export function RhythmStepView({ step, onDone }: { step: RhythmStep; onDone: () 
   const totalBeats = step.beats.reduce((a, b) => a + b, 0);
   const minGap = Math.min(...step.beats);
 
-  const [phase, setPhase] = useState<'ready' | 'running' | 'result'>('ready');
+  const [phase, setPhase] = useState<'ready' | 'listening' | 'running' | 'result'>('ready');
   const [count, setCount] = useState<number | null>(null);
   const [active, setActive] = useState(-1);
   const [score, setScore] = useState<RhythmScore | null>(null);
+  const [received, setReceived] = useState(0); // every key press during the attempt, even ones too far from the pattern
   const run = useRef({ onsets: [] as number[], expected: [] as number[], phase: 'ready' as string });
   const engine = useRef<MetronomeEngine | null>(null);
   const timers = useRef<number[]>([]);
@@ -62,6 +70,13 @@ export function RhythmStepView({ step, onDone }: { step: RhythmStep; onDone: () 
     const result = scoreRhythm(run.current.expected, run.current.onsets, spbMs, minGap);
     run.current.phase = 'result';
     setPhase('result');
+    setReceived(run.current.onsets.length);
+    // Handy when something seems off: press F12 and look at the Console.
+    console.info('[rhythm]', result.status, {
+      expectedAt: run.current.expected.map((t) => Math.round(t - run.current.expected[0])),
+      pressedAt: run.current.onsets.map((t) => Math.round(t - run.current.expected[0])),
+      windowMs: Math.round(result.windowMs),
+    });
     setScore(result);
     setActive(-1);
     if (result.status === 'ok') {
@@ -114,9 +129,33 @@ export function RhythmStepView({ step, onDone }: { step: RhythmStep; onDone: () 
     eng.start();
   }
 
+  /** Play the pattern once so the player hears what to aim for, then start the count-in. */
+  function listen() {
+    setPhase('listening');
+    const t0 = getAudioContext().currentTime + DEMO_LEAD_MS / 1000;
+    notes.forEach((n, i) => {
+      playNote(DEMO_NOTE, t0 + (n.startBeat * spbMs) / 1000, Math.min(0.45, (n.beats * spbMs) / 1000));
+      later(() => setActive(i), DEMO_LEAD_MS + n.startBeat * spbMs);
+    });
+    later(begin, DEMO_LEAD_MS + totalBeats * spbMs + DEMO_TAIL_MS);
+  }
+
+  /** "Hear it again": drop whatever is happening, play the pattern, then count in as usual. */
+  const replay = () => {
+    timers.current.forEach((id) => window.clearTimeout(id));
+    timers.current = [];
+    engine.current?.stop();
+    run.current = { onsets: [], expected: [], phase: 'ready' };
+    setCount(null);
+    setScore(null);
+    setActive(-1);
+    listen();
+  };
+
   useEffect(() => {
     speak(step.title);
-    later(begin, 900);
+    if (step.listen) later(listen, 600);
+    else later(begin, 900);
     return () => {
       timers.current.forEach((id) => window.clearTimeout(id));
       engine.current?.stop();
@@ -131,11 +170,28 @@ export function RhythmStepView({ step, onDone }: { step: RhythmStep; onDone: () 
       <h2>{step.title}</h2>
       {step.body && <p className="explain">{step.body}</p>}
       <div className="count-box">
-        {count !== null ? <span className="count-in">{count}</span> : <span className="muted">{phase === 'running' ? 'Play a key on every note that lights up' : ' '}</span>}
+        {count !== null ? (
+          <div className="beat-dots" aria-label="Count-in">
+            {Array.from({ length: beatsPerBar }, (_, i) => (
+              <span key={i} className={`dot${i === beatsPerBar - count ? ' on' : ''}${i === 0 ? ' downbeat' : ''}`} />
+            ))}
+          </div>
+        ) : <span className="muted">{phase === 'running' ? 'Play a key on every note that lights up' : ' '}</span>}
       </div>
       <StaffNotation notes={notes} beatsPerBar={beatsPerBar} activeIndex={active} maxBarsPerLine={2} />
+      <p>
+        <button onClick={replay} disabled={phase === 'listening'} title="Play this rhythm at its tempo, then count in again">
+          🔊 Hear it again
+        </button>
+      </p>
       <p className="feedback-line" aria-live="polite">
-        {score ? message(score) : phase === 'ready' ? 'Get ready…' : ' '}
+        {score
+          ? message(score, received)
+          : phase === 'listening'
+            ? '🔊 Listen first: this is what you will play…'
+            : phase === 'ready'
+              ? 'Get ready…'
+              : ' '}
       </p>
     </div>
   );

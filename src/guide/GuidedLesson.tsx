@@ -6,6 +6,7 @@ import { numberBetween } from '../lib/storage';
 import { formatLifetime, useLifetimeStats } from '../lib/useLifetimeStats';
 import { usePersistentState } from '../lib/usePersistentState';
 import { speak } from './feedback';
+import { ChooseStepView } from './ChooseStepView';
 import { InfoStepView } from './InfoStepView';
 import { PlayStepView } from './PlayStepView';
 import { RhythmStepView } from './RhythmStepView';
@@ -93,8 +94,10 @@ export function GuidedLesson({ lesson, onComplete, nextTitle, onNext }: Props) {
 
       {!piano.connected && (
         <p className="hint-box">
-          No keyboard connected. The lessons are made to be played on your piano: use the button at the top right
-          (or the Keyboard menu) to connect it. You can still click the on-screen keys to try things out.
+          {piano.lost
+            ? 'Your keyboard disappeared: it has probably switched itself off (Auto Power Off). Switch it on again and this page reconnects by itself.'
+            : 'No keyboard connected. The lessons are made to be played on your piano: use the button at the top right (or the Keyboard menu) to connect it.'}{' '}
+          You can still click the on-screen keys to try things out.
         </p>
       )}
       {audioBlocked && (
@@ -106,6 +109,9 @@ export function GuidedLesson({ lesson, onComplete, nextTitle, onNext }: Props) {
         <PlayStepView key={stepKey} step={step} onAttempt={record} onDone={() => goTo(index + 1)} />
       )}
       {step.kind === 'rhythm' && <RhythmStepView key={stepKey} step={step} onDone={() => goTo(index + 1)} />}
+      {step.kind === 'choose' && (
+        <ChooseStepView key={stepKey} step={step} onAttempt={record} onDone={() => goTo(index + 1)} />
+      )}
 
       <div className="guide-controls">
         <button onClick={() => goTo(index - 1)} disabled={index === 0}>← Back</button>

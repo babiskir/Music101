@@ -22,6 +22,8 @@ interface PianoContextValue {
   /** Where notes currently come from. MIDI wins if both are connected. */
   source: Source;
   connected: boolean;
+  /** True when a keyboard WAS connected in this session and has disappeared (switched off, unplugged). It reconnects by itself. */
+  lost: boolean;
   /** Human-readable name of the connected device(s). */
   deviceName?: string;
   error?: string;
@@ -86,6 +88,7 @@ export function PianoInputProvider({ children }: { children: ReactNode }) {
           count = names.length;
           setMidiNames(names);
         },
+        setError,
       );
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Could not open MIDI.');
@@ -97,11 +100,14 @@ export function PianoInputProvider({ children }: { children: ReactNode }) {
     setError(undefined);
     storage.set(PREF_KEY, 'midi');
     if ((await listenMidi()) === 0) setError('No USB MIDI keyboard found. Plug the keyboard in with its USB cable.');
-  }, [listenMidi]);
+    else mic.stop(); // switching from the microphone: USB gives exact notes, the mic is not needed
+  }, [listenMidi, mic]);
 
   const connectMicNow = useCallback(async () => {
     setError(undefined);
     storage.set(PREF_KEY, 'mic');
+    midiRef.current?.dispose(); // switching from USB: otherwise MIDI would keep winning
+    midiRef.current = null;
     await mic.start();
   }, [mic]);
 
@@ -115,15 +121,18 @@ export function PianoInputProvider({ children }: { children: ReactNode }) {
   /** Start-up version of "automatic": only asks for MIDI if the browser already allowed it (MIDI is rare). */
   const connectOnStartup = useCallback(
     async (pref: 'auto' | 'midi' | 'mic') => {
-      const midiAllowed = async () => {
+      // Try USB MIDI first unless the browser was told to block it. (Only trying when MIDI was already
+      // allowed meant a USB-only keyboard silently ended up on the PC's microphone, which hears nothing.)
+      const midiPossible = async () => {
+        if (!('requestMIDIAccess' in navigator)) return false;
         try {
-          return (await navigator.permissions.query({ name: 'midi' as PermissionName })).state === 'granted';
+          return (await navigator.permissions.query({ name: 'midi' as PermissionName })).state !== 'denied';
         } catch {
-          return false;
+          return true;
         }
       };
       if (pref === 'mic') return mic.start();
-      if (pref === 'midi' || (await midiAllowed())) {
+      if (pref === 'midi' || (await midiPossible())) {
         if ((await listenMidi()) > 0) return undefined;
       }
       return mic.start(); // the browser shows its one-time "allow microphone" question the first time
@@ -164,10 +173,37 @@ export function PianoInputProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const source: Source = midiConnected ? 'midi' : micListening ? 'mic' : 'none';
+
+  // Remember that a keyboard was there, so "it went away" can be told apart from "never connected".
+  const [everConnected, setEverConnected] = useState(false);
+  useEffect(() => {
+    if (source !== 'none') setEverConnected(true);
+  }, [source]);
+  const lost = everConnected && source === 'none';
+
+  // Coming back to the page (after a class break, the keyboard may have switched itself off and on):
+  // if nothing is connected, look again. Switching the keyboard on is detected by the browser too.
+  const connectedRef = useRef(false);
+  connectedRef.current = source !== 'none';
+  useEffect(() => {
+    const look = () => {
+      if (document.visibilityState === 'hidden' || connectedRef.current) return;
+      if (mic.state.status === 'requesting') return;
+      const pref = storage.get<'auto' | Source>(PREF_KEY, 'auto', oneOf('auto', 'none', 'midi', 'mic'));
+      if (pref !== 'none') void connectOnStartup(pref);
+    };
+    window.addEventListener('focus', look);
+    document.addEventListener('visibilitychange', look);
+    return () => {
+      window.removeEventListener('focus', look);
+      document.removeEventListener('visibilitychange', look);
+    };
+  }, [connectOnStartup, mic.state.status]);
   const value = useMemo<PianoContextValue>(
     () => ({
       source,
       connected: source !== 'none',
+      lost,
       deviceName: midiConnected
         ? midiNames.join(', ')
         : micListening && mic.state.deviceLabel
@@ -182,7 +218,7 @@ export function PianoInputProvider({ children }: { children: ReactNode }) {
       subscribe,
       mic,
     }),
-    [source, midiConnected, midiNames, micListening, mic, error, lastNote, connectAuto, connectMidiNow, connectMicNow, disconnect, subscribe],
+    [source, lost, midiConnected, midiNames, micListening, mic, error, lastNote, connectAuto, connectMidiNow, connectMicNow, disconnect, subscribe],
   );
 
   return <PianoContext.Provider value={value}>{children}</PianoContext.Provider>;

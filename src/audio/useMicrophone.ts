@@ -14,6 +14,8 @@ export interface MicState {
   deviceLabel?: string;
   /** deviceId of the open input (matches the Input list). */
   deviceId?: string;
+  /** True when an input that was working disappeared (e.g. the keyboard switched itself off). We keep trying to get it back. */
+  lost?: boolean;
   /** Set when the app skipped a non-microphone default input in favour of a real one. */
   switchedFrom?: string;
   /** Level in dB (about -100 silence .. 0 clipping). */
@@ -38,7 +40,10 @@ interface Monitor {
 
 const IDLE: MicState = { status: 'idle', db: -100, peakDb: -100, note: null };
 const SOUND_GATE_DB = -45; // below this we don't even try to detect a pitch
-const UPDATE_MS = 50;
+const UPDATE_MS = 25; // fast enough to catch quick repeated notes
+const RETRY_LOST_MS = 2500; // how often to try again while the input is gone
+const LOST_MESSAGE =
+  'The input disappeared. Is the keyboard switched off (it may have turned itself off)? Switch it on again: the app reconnects by itself.';
 
 function describeError(e: unknown): string {
   const name = e instanceof DOMException ? e.name : '';
@@ -80,6 +85,7 @@ export function useMicrophone(options: { onFrame?: (frame: MicFrame) => void } =
   } | null>(null);
   const deviceLabelRef = useRef<string | undefined>(undefined);
   const startToken = useRef(0); // counts start() calls, so an outdated one can cancel itself
+  const lostRef = useRef(false); // an input that was working has disappeared
 
   // "Hear it": play the input through the PC's speakers/headphones. Starts off, and comes back on only
   // for the same input it was switched on for (a real mic next to speakers would howl).
@@ -155,7 +161,7 @@ export function useMicrophone(options: { onFrame?: (frame: MicFrame) => void } =
     async (deviceId?: string, switchedFrom?: string, restored = false) => {
       stop();
       const token = ++startToken.current;
-      setState({ ...IDLE, status: 'requesting' });
+      setState({ ...IDLE, status: 'requesting', lost: lostRef.current });
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
           audio: {
@@ -298,14 +304,37 @@ export function useMicrophone(options: { onFrame?: (frame: MicFrame) => void } =
 
         resources.current = { stream, source, hp, notch, gate, monitorGain, raf: requestAnimationFrame(loop) };
         applyCleanup(resources.current, cleanupRef.current);
+        lostRef.current = false;
+
+        // The input vanished (device unplugged or powered off): say so, and let the retry below reconnect.
+        track?.addEventListener('ended', () => {
+          if (token !== startToken.current) return; // a newer start() took over
+          lostRef.current = true;
+          stop();
+          setState({ ...IDLE, status: 'error', lost: true, error: LOST_MESSAGE });
+        });
       } catch (e) {
-        setState({ ...IDLE, status: 'error', error: describeError(e) });
+        if (lostRef.current) setState({ ...IDLE, status: 'error', lost: true, error: LOST_MESSAGE });
+        else setState({ ...IDLE, status: 'error', error: describeError(e) });
       }
     },
     [stop, setCleanup],
   );
 
   useEffect(() => stop, [stop]);
+
+  // While the input is gone, try to get it back: when the browser reports a device change, and every few seconds.
+  const lost = state.lost === true && state.status === 'error';
+  useEffect(() => {
+    if (!lost) return;
+    const retry = () => void start();
+    const id = window.setInterval(retry, RETRY_LOST_MS);
+    navigator.mediaDevices?.addEventListener('devicechange', retry);
+    return () => {
+      window.clearInterval(id);
+      navigator.mediaDevices?.removeEventListener('devicechange', retry);
+    };
+  }, [lost, start]);
 
   return {
     state, devices, start, stop,

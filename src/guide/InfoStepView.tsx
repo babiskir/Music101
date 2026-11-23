@@ -1,5 +1,8 @@
 import { useEffect, useRef } from 'react';
+import { midiToPitch } from '../domain/notes';
 import { Keyboard } from '../features/keyboard/Keyboard';
+import { StaffNotation } from '../features/staff/StaffNotation';
+import { labelsFor } from './labels';
 import { usePianoNotes } from '../input/PianoInput';
 import type { InfoStep } from './types';
 
@@ -28,6 +31,18 @@ export function InfoStepView({ step, onDone }: { step: InfoStep; onDone: () => v
       <h2>{step.title}</h2>
       {step.body.map((p) => <p key={p} className="explain">{p}</p>)}
       {step.list && <ul>{step.list.map((li) => <li key={li}>{li}</li>)}</ul>}
+      {step.staff && (
+        <div className="staff-narrow">
+          <StaffNotation
+            notes={step.staff.notes.map((m, i) => ({ pitch: midiToPitch(m), beats: 1, startBeat: i }))}
+            beatsPerBar={step.staff.notes.length}
+            activeIndex={-1}
+            maxBarsPerLine={1}
+            timeSignature={false}
+            labels={labelsFor(step.staff.notes, step.staff.labels, step.staff.solfege)}
+          />
+        </div>
+      )}
       {step.keyboard && (
         <Keyboard
           from={step.keyboard.from}

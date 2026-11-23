@@ -1,5 +1,5 @@
 import { CT_S100 } from '../domain/instrument';
-import { isBlackKey, midiToName, pitchClassLabel, spokenName } from '../domain/notes';
+import { isBlackKey, midiToName, pitchClassLabel, solfege, spokenName } from '../domain/notes';
 import { FINGER_NAMES, type Finger } from '../domain/song';
 import { LANDMARKS } from './landmarks';
 import type { Notation, Target } from './types';
@@ -15,6 +15,22 @@ export function letterTarget(midi: number): Target {
     chip: midiToName(midi),
     hint: LANDMARKS[pc],
     spoken: `Play ${spokenName(pc)}`,
+  };
+}
+
+/** Quiz card showing a syllable (do re mi...): any octave of that note is right. Black keys fall back to letters. */
+export function solfegeTarget(midi: number): Target {
+  const syllable = solfege(midi);
+  if (!syllable) return letterTarget(midi);
+  const pc = midi % 12;
+  return {
+    present: 'name',
+    ref: midi,
+    match: (m) => m % 12 === pc,
+    label: syllable,
+    chip: midiToName(midi),
+    hint: `${syllable} is ${pitchClassLabel(pc)}. ${LANDMARKS[pc]}`,
+    spoken: `Play ${syllable}`,
   };
 }
 
@@ -43,11 +59,11 @@ export function quizTargets(pool: number[], count: number, notation: Notation): 
     const candidates = pool.filter((m) => m !== prev);
     const midi = candidates[Math.floor(Math.random() * candidates.length)];
     prev = midi;
-    let kind: 'name' | 'staff' = notation === 'mixed' ? (Math.random() < 0.5 ? 'name' : 'staff') : notation;
+    let kind: 'name' | 'staff' = notation === 'mixed' ? (Math.random() < 0.5 ? 'name' : 'staff') : notation === 'staff' ? 'staff' : 'name';
     if (notation === 'mixed' && streak >= 2 && kind === streakKind) kind = kind === 'name' ? 'staff' : 'name';
     streak = kind === streakKind ? streak + 1 : 1;
     streakKind = kind;
-    out.push(kind === 'name' ? letterTarget(midi) : staffTarget(midi));
+    out.push(notation === 'solfege' ? solfegeTarget(midi) : kind === 'name' ? letterTarget(midi) : staffTarget(midi));
   }
   return out;
 }
@@ -62,16 +78,22 @@ export function anyKey(label: string, match: (midi: number) => boolean, hint?: s
   return { match, label, chip: '•', hint, spoken: label };
 }
 
+/** "thumb", "index finger", ...: fingers are always named in words, never numbered. */
+export function fingerPhrase(finger: Finger): string {
+  return finger === 1 ? FINGER_NAMES[1] : `${FINGER_NAMES[finger]} finger`;
+}
+
+/** The player sees the note (a letter) and which finger to use, in words. */
 export function fingerTarget(position: Record<Finger, number>, finger: Finger): Target {
   const midi = position[finger];
   return {
     midi,
     ref: midi,
     finger,
-    label: `Finger ${finger} (${FINGER_NAMES[finger]})`,
-    chip: String(finger),
-    hint: `Finger ${finger} rests on ${midiToName(midi)}.`,
-    spoken: `Finger ${finger}`,
+    label: `${midiToName(midi)} · ${fingerPhrase(finger)}`,
+    chip: midiToName(midi),
+    hint: `Your ${fingerPhrase(finger)} rests on ${midiToName(midi)}.`,
+    spoken: `Play ${spokenName(midi % 12)} with your ${fingerPhrase(finger)}`,
   };
 }
 

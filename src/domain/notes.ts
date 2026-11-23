@@ -45,6 +45,13 @@ export function describePitch(midi: number): string {
     : midiToPitch(midi);
 }
 
+const SOLFEGE: Record<number, string> = { 0: 'do', 2: 're', 4: 'mi', 5: 'fa', 7: 'sol', 9: 'la', 11: 'si' };
+
+/** Fixed-do syllable of a white key (do = C, ... si = B). Undefined for black keys. */
+export function solfege(midi: number): string | undefined {
+  return SOLFEGE[midi % 12];
+}
+
 /** How a pitch class is said aloud: "F sharp", "D flat" is avoided by always using the sharp name. */
 export function spokenName(pc: number): string {
   return NAMES[pc].replace('#', ' sharp');

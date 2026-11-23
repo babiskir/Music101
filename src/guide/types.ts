@@ -7,7 +7,10 @@ import type { KeyHighlight } from '../features/keyboard/Keyboard';
  *  - 'staff' : a note on the treble staff. Exactly that key counts.
  *  - 'mixed' : each prompt randomly one or the other.
  */
-export type Notation = 'name' | 'staff' | 'mixed';
+export type Notation = 'name' | 'staff' | 'mixed' | 'solfege';
+
+/** Letters printed under the notes of a staff: on every note, only the first, or none (they fade away). */
+export type LabelMode = 'all' | 'first' | 'none';
 
 /** One thing the player has to play. */
 export interface Target {
@@ -40,6 +43,10 @@ export interface Show {
   fingers?: boolean;
   /** Sheet music for the whole sequence, with the current note lit (songs and runs). */
   staff?: boolean;
+  /** Letter names under the notes of the sheet music (default none). */
+  labels?: LabelMode;
+  /** Add do-re-mi next to the letters (fixed do: do = C). */
+  solfege?: boolean;
 }
 
 /** Read-and-continue screen. Advances when the player presses any key on the piano. */
@@ -51,6 +58,8 @@ export interface InfoStep {
   list?: string[];
   /** Optional picture of the keyboard with some keys marked. */
   keyboard?: { from: number; to: number; keys?: Record<number, KeyHighlight>; names?: boolean };
+  /** Optional picture of a few notes on the staff, left to right, one beat each. */
+  staff?: { notes: number[]; labels?: LabelMode; solfege?: boolean };
 }
 
 /** "Play this" step: the app listens and advances by itself. */
@@ -78,6 +87,31 @@ export interface RhythmStep {
   beats: number[];
   bpm: number;
   beatsPerBar?: number;
+  /** Play the pattern aloud first (the notes light up as they sound), then count in. For new rhythms. */
+  listen?: boolean;
 }
 
-export type Step = InfoStep | PlayStep | RhythmStep;
+/** One question of a "choose" step. */
+export interface Choice {
+  /** The question, in words. */
+  prompt: string;
+  /** Notes (MIDI) drawn on the staff, left to right, and played when "Hear it" is pressed. */
+  notes?: number[];
+  /** Letters printed under those notes. */
+  labels?: LabelMode;
+  solfege?: boolean;
+  options: string[];
+  /** Index into `options`. */
+  answer: number;
+  hint?: string;
+}
+
+/** Tap the right answer with the mouse or touch: higher or lower, step or skip... */
+export interface ChooseStep {
+  kind: 'choose';
+  title: string;
+  body?: string;
+  choices: Choice[] | (() => Choice[]);
+}
+
+export type Step = InfoStep | PlayStep | RhythmStep | ChooseStep;

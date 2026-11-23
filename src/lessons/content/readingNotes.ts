@@ -3,18 +3,20 @@ import type { LessonDef } from '../types';
 
 export const readingNotes: LessonDef = {
   id: 'reading-notes',
-  title: 'Reading notes',
-  summary: 'Notes appear on the staff, like on real sheet music. Play them on your piano.',
+  title: 'Shortcuts and sharps',
+  summary: 'Optional memory tricks for reading any note fast, then the black keys. Do the reading lessons first.',
   goals: [
-    'Read notes on the treble staff, from middle C upwards',
-    'Connect a note on paper to a key on your piano',
-    'Use "Every Good Boy Does Fine" and "FACE" to read quickly',
+    'Use "Every Good Boy Does Fine" and "FACE" as shortcuts to find a note',
+    'Read notes with sharps (the black keys)',
+    'Read a mix of staff notes and letters over two octaves',
   ],
   steps: [
     {
       kind: 'info',
-      title: 'How to read the staff',
-      body: ['Higher on the staff means higher on the keyboard. Notes sit on lines or in spaces.'],
+      title: 'Two memory tricks',
+      body: [
+        'You can already read from C to C by distance from the landmarks. These two sayings are shortcuts for finding any note quickly, and for reaching beyond the notes you know. They are optional: skip them if the landmarks work for you.',
+      ],
       list: [
         'Middle C sits on its own little line BELOW the staff.',
         'The lines, from the bottom: E G B D F ("Every Good Boy Does Fine").',

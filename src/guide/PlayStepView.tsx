@@ -3,12 +3,13 @@ import { getAudioContext } from '../audio/audioContext';
 import { playNote } from '../audio/sounds';
 import { CT_S100 } from '../domain/instrument';
 import { midiToPitch, pitchClassLabel } from '../domain/notes';
-import type { TimedNote } from '../domain/song';
+import { FINGER_NAMES, type TimedNote } from '../domain/song';
 import { Keyboard, type KeyHighlight } from '../features/keyboard/Keyboard';
 import { rangeForNotes } from '../features/keyboard/range';
 import { StaffNotation } from '../features/staff/StaffNotation';
 import { usePiano, usePianoNotes } from '../input/PianoInput';
 import { cue, isCueActive, speak } from './feedback';
+import { labelsFor } from './labels';
 import type { PlayStep, Target } from './types';
 
 interface Props {
@@ -109,7 +110,7 @@ export function PlayStepView({ step, onDone, onAttempt }: Props) {
   // --- keyboard highlights
   const highlights: Record<number, KeyHighlight> = {};
   if (!done) {
-    const label = (t: Target) => (show.fingers && t.finger ? String(t.finger) : undefined);
+    const label = (t: Target) => (show.fingers && t.finger ? FINGER_NAMES[t.finger] : undefined);
     if (show.keys || hinted) for (const k of acceptedKeys(current)) highlights[k] = { kind: 'current', label: label(current) };
     const next = targets[index + 1];
     if (show.keys && next && next.midi !== undefined && !highlights[next.midi]) {
@@ -123,17 +124,27 @@ export function PlayStepView({ step, onDone, onAttempt }: Props) {
     if (!show.staff || isCard || !targets.every((t) => t.midi !== undefined)) return null;
     let at = 0;
     return targets.map((t) => {
-      const n: TimedNote = { pitch: midiToPitch(t.midi!), beats: t.beats ?? 1, startBeat: at, finger: t.finger };
+      const n: TimedNote = { pitch: midiToPitch(t.midi!), beats: t.beats ?? 1, startBeat: at }; // no finger numbers on the sheet
       at += n.beats;
       return n;
     });
   }, [show.staff, isCard, targets]);
+
+  const timedLabels = useMemo(
+    () => (timed ? labelsFor(targets.map((t) => t.midi!), show.labels, show.solfege) : undefined),
+    [timed, targets, show.labels, show.solfege],
+  );
 
   // --- a single note on the staff (quiz card)
   const cardNote: TimedNote[] | null =
     isCard && current.present === 'staff' && current.midi !== undefined
       ? [{ pitch: midiToPitch(current.midi), beats: 4, startBeat: 0 }]
       : null;
+  // On a card, "first" means: only the first prompt of the round shows its letter.
+  const cardLabels =
+    cardNote && current.midi !== undefined
+      ? labelsFor([current.midi], index === 0 || show.labels === 'all' ? show.labels : 'none', show.solfege)
+      : undefined;
 
   const accepted = done ? [] : acceptedKeys(current);
 
@@ -147,12 +158,12 @@ export function PlayStepView({ step, onDone, onAttempt }: Props) {
           {current.present === 'name' && <div className="big-note" aria-label="Play this note">{current.label}</div>}
           {cardNote && (
             <div className="staff-narrow">
-              <StaffNotation notes={cardNote} beatsPerBar={4} activeIndex={-1} maxBarsPerLine={1} />
+              <StaffNotation notes={cardNote} beatsPerBar={4} activeIndex={-1} maxBarsPerLine={1} timeSignature={false} labels={cardLabels} />
             </div>
           )}
           <div className="dots" aria-hidden="true">
             {targets.map((_, i) => (
-              <span key={i} className={`dot2${i < index || done ? ' done' : ''}${i === index && !done ? ' now' : ''}`} />
+              <span key={i} className={`dot2${i < index || done ? ' done' : ''}${i === index && !done ? ' current' : ''}`} />
             ))}
           </div>
         </div>
@@ -162,14 +173,14 @@ export function PlayStepView({ step, onDone, onAttempt }: Props) {
           {targets.length <= 16 && (
             <div className="drill-seq" aria-label="Sequence">
               {targets.map((t, i) => (
-                <span key={i} className={`seq-chip${i < index || done ? ' done' : ''}${i === index && !done ? ' now' : ''}`}>
+                <span key={i} className={`seq-chip${i < index || done ? ' done' : ''}${i === index && !done ? ' current' : ''}`}>
                   {t.chip ?? '•'}
                 </span>
               ))}
             </div>
           )}
           {timed && (
-            <StaffNotation notes={timed} beatsPerBar={step.beatsPerBar ?? 4} activeIndex={done ? -1 : index} />
+            <StaffNotation notes={timed} beatsPerBar={step.beatsPerBar ?? 4} activeIndex={done ? -1 : index} labels={timedLabels} />
           )}
         </>
       )}
@@ -180,7 +191,7 @@ export function PlayStepView({ step, onDone, onAttempt }: Props) {
         {done
           ? mistakes === 0
             ? '✓ Clean!'
-            : `✓ Done (${mistakes} slip${mistakes === 1 ? '' : 's'})`
+            : '✓ Done, with a few slips'
           : message ?? (hinted && current.hint ? `Hint: ${current.hint}` : ' ')}
       </p>
     </div>

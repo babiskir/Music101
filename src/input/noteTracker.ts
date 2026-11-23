@@ -17,7 +17,7 @@ export interface TrackerConfig {
   holdMs: number;
 }
 
-export const DEFAULT_TRACKER: TrackerConfig = { gateDb: -45, reattackDb: 6, holdMs: 200 };
+export const DEFAULT_TRACKER: TrackerConfig = { gateDb: -45, reattackDb: 3.5, holdMs: 110 };
 
 export function createNoteTracker(cfg: TrackerConfig = DEFAULT_TRACKER) {
   let active: number | null = null;
