@@ -17,7 +17,7 @@ export const maryHadALittleLamb: Song = {
   targetBpm: 100,
   hand: 'right',
   handPosition:
-    'Right hand, the same position as before: thumb on middle C, then D, E, F and G under the other fingers. This song only needs the thumb to the pinky.',
+    'Right hand, the same position as before: thumb on middle Do (C), then Re (D), Mi (E), Fa (F) and Sol (G) under the other fingers. This song only needs the thumb to the pinky.',
   tips: [
     'The tune only moves by steps, with one skip. Look at the shape on the staff.',
     'Bars 1 and 5 are the same, and so are bars 3 and 7. Learn one and you know the other.',

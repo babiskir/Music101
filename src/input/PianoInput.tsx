@@ -41,6 +41,7 @@ interface PianoContextValue {
 
 const PianoContext = createContext<PianoContextValue | null>(null);
 const PREF_KEY = 'input.source';
+const SAME_PRESS_MS = 60;
 
 /**
  * One shared connection to the player's keyboard, so every lesson can react to real key presses.
@@ -57,7 +58,13 @@ export function PianoInputProvider({ children }: { children: ReactNode }) {
   const [lastNote, setLastNote] = useState<PianoContextValue['lastNote']>(null);
   const counter = useRef(0);
 
+  // One key press can reach us twice: a USB keyboard can show up as two MIDI ports that both send it.
+  // Nobody strikes the same key twice within this time, so a repeat that quick is the same press.
+  const lastEmit = useRef<{ midi: number; time: number } | null>(null);
   const emit = useCallback((e: NoteEvent) => {
+    const prev = lastEmit.current;
+    if (e.source === 'midi' && prev && prev.midi === e.midi && e.time - prev.time < SAME_PRESS_MS) return;
+    lastEmit.current = { midi: e.midi, time: e.time };
     setLastNote({ ...e, n: ++counter.current });
     subscribers.current.forEach((h) => h(e));
   }, []);
@@ -78,22 +85,31 @@ export function PianoInputProvider({ children }: { children: ReactNode }) {
   }, [micListening]);
 
   /** Listens to MIDI (also for keyboards plugged in later). Resolves to how many inputs exist right now. */
-  const listenMidi = useCallback(async (): Promise<number> => {
-    let count = 0;
-    try {
-      midiRef.current?.dispose();
-      midiRef.current = await connectMidi(
-        (n) => emit({ midi: n.midi, source: 'midi', time: performance.now() }),
-        (names) => {
-          count = names.length;
-          setMidiNames(names);
-        },
-        setError,
-      );
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not open MIDI.');
-    }
-    return count;
+  const listening = useRef<Promise<number> | null>(null);
+  const listenMidi = useCallback((): Promise<number> => {
+    // While the browser's "allow MIDI" question is open, the page regains focus when it closes, which
+    // used to start a second, competing connection. Share the one in progress instead.
+    if (listening.current) return listening.current;
+    const run = async (): Promise<number> => {
+      let count = 0;
+      try {
+        midiRef.current?.dispose();
+        midiRef.current = null;
+        midiRef.current = await connectMidi(
+          (n) => emit({ midi: n.midi, source: 'midi', time: performance.now() }),
+          (names) => {
+            count = names.length;
+            setMidiNames(names);
+          },
+          setError,
+        );
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Could not open MIDI.');
+      }
+      return count;
+    };
+    listening.current = run().finally(() => { listening.current = null; });
+    return listening.current;
   }, [emit]);
 
   const connectMidiNow = useCallback(async () => {
@@ -131,7 +147,7 @@ export function PianoInputProvider({ children }: { children: ReactNode }) {
           return true;
         }
       };
-      if (pref === 'mic') return mic.start();
+      // Even when the microphone was chosen before, a keyboard plugged in with USB wins: exact notes.
       if (pref === 'midi' || (await midiPossible())) {
         if ((await listenMidi()) > 0) return undefined;
       }

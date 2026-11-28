@@ -1,4 +1,4 @@
-import { getAudioContext } from './audioContext';
+import { getAudioContext, onStopAll } from './audioContext';
 import { playClick } from './sounds';
 
 export interface Tick {
@@ -37,6 +37,7 @@ export class MetronomeEngine {
   private pending = new Set<number>();
   private nextTime = 0;
   private index = 0;
+  private unsubscribe: (() => void) | null = null;
 
   constructor(private getConfig: () => MetronomeConfig) {}
 
@@ -50,6 +51,7 @@ export class MetronomeEngine {
     this.index = 0;
     this.nextTime = ctx.currentTime + 0.06;
     this.timer = window.setInterval(() => this.pump(), INTERVAL_MS);
+    this.unsubscribe = onStopAll(() => this.stop());
     this.pump();
   }
 
@@ -58,6 +60,8 @@ export class MetronomeEngine {
     this.timer = null;
     this.pending.forEach((id) => window.clearTimeout(id));
     this.pending.clear();
+    this.unsubscribe?.();
+    this.unsubscribe = null;
   }
 
   private pump(): void {

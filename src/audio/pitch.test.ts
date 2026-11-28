@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { midiToName, midiToPitch, pitchToMidi } from '../domain/notes';
+import { bothNames, midiToName, midiToPitch, pitchToMidi } from '../domain/notes';
 import { detectPitch, frequencyToNote, rms } from './pitch';
 
 const SR = 48000;
@@ -31,5 +31,6 @@ describe('note names', () => {
     expect(pitchToMidi('C4')).toBe(60);
     expect(midiToPitch(61)).toBe('C#4');
     expect(midiToName(66)).toBe('F#');
+    expect(bothNames(66)).toBe('Fa♯ (F#)');
   });
 });

@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { songs } from '../data/songs';
-import { pitchToMidi } from '../domain/notes';
+import { noteName, pitchClassName, pitchToMidi } from '../domain/notes';
 import { labelsFor } from '../guide/labels';
 import type { Choice, Step, Target } from '../guide/types';
-import { solfege } from '../domain/notes';
+import { patternBeats } from '../guide/rhythmPattern';
 import { quizTargets, whiteKeys } from '../guide/targets';
 import { lessons } from './registry';
 
@@ -43,7 +43,7 @@ describe.each(lessons)('lesson "$title"', (lesson) => {
       if (step.kind !== 'play') continue;
       const targets = targetsOf(step);
       expect(targets.length, step.title).toBeGreaterThan(0);
-      for (const t of targets) expect(t.midi !== undefined || typeof t.match === 'function', step.title).toBe(true);
+      for (const t of targets) expect(t.midi !== undefined || typeof t.match === 'function' || !!t.keys?.length, step.title).toBe(true);
     }
   });
 
@@ -62,8 +62,9 @@ describe.each(lessons)('lesson "$title"', (lesson) => {
   it('rhythm steps have a valid pattern', () => {
     for (const step of lesson.steps) {
       if (step.kind !== 'rhythm') continue;
-      expect(step.beats.every((b) => b > 0)).toBe(true);
-      expect(step.beats.reduce((a, b) => a + b, 0) % (step.beatsPerBar ?? 4)).toBe(0);
+      expect(step.beats.every((b) => b !== 0), step.title).toBe(true);
+      expect(step.beats.some((b) => b > 0), `${step.title}: something to play`).toBe(true);
+      expect(patternBeats(step.beats) % (step.beatsPerBar ?? 4), step.title).toBe(0);
     }
   });
 
@@ -141,7 +142,7 @@ describe('the road into reading music', () => {
     expect(pool('read-short-tunes').every((m) => whiteKeys(60, 67).includes(m))).toBe(true);
   });
 
-  it('letters fade inside a lesson: all, then the first, then none', () => {
+  it('names fade inside a lesson: all, then the first, then none', () => {
     for (const id of ['staff-three-notes', 'staff-five-notes']) {
       const modes = lessons
         .find((l) => l.id === id)!
@@ -155,29 +156,141 @@ describe('the road into reading music', () => {
 
 describe('labels under notes', () => {
   it('"all" labels every note, "first" only the first, "none" nothing', () => {
-    expect(labelsFor([60, 62, 64], 'all')).toEqual(['C', 'D', 'E']);
-    expect(labelsFor([60, 62, 64], 'first')).toEqual(['C', undefined, undefined]);
+    expect(labelsFor([60, 62, 64], 'all')).toEqual(['Do\nC', 'Re\nD', 'Mi\nE']);
+    expect(labelsFor([60, 62, 64], 'first')).toEqual(['Do\nC', undefined, undefined]);
     expect(labelsFor([60, 62, 64], 'none')).toEqual([undefined, undefined, undefined]);
     expect(labelsFor([60, 62], undefined)).toEqual([undefined, undefined]);
-  });
-
-  it('adds do re mi next to the letter', () => {
-    expect(labelsFor([60, 67], 'all', true)).toEqual(['C · do', 'G · sol']);
   });
 });
 
 describe('do re mi', () => {
-  it('fixed do: C is do, B is si, black keys have no syllable', () => {
-    expect([60, 62, 64, 65, 67, 69, 71].map(solfege)).toEqual(['do', 're', 'mi', 'fa', 'sol', 'la', 'si']);
-    expect(solfege(61)).toBeUndefined();
+  it('fixed do: C is Do, B is Si, black keys are sharps or flats', () => {
+    expect([60, 62, 64, 65, 67, 69, 71].map(noteName)).toEqual(['Do', 'Re', 'Mi', 'Fa', 'Sol', 'La', 'Si']);
+    expect(noteName(61)).toBe('Do♯');
+    expect(pitchClassName(10)).toBe('La♯/Si♭');
   });
 
-  it('a syllable prompt is the syllable, accepts the key in any octave, and shows no numeral', () => {
-    for (const t of quizTargets(whiteKeys(48, 84), 100, 'solfege')) {
-      expect(t.label).toMatch(/^(do|re|mi|fa|sol|la|si)$/);
+  it('a written prompt is one name, accepts the key in any octave, and shows no numeral', () => {
+    for (const t of quizTargets(whiteKeys(48, 84), 100, 'name')) {
+      expect(t.label).toMatch(/^(Do|Re|Mi|Fa|Sol|La|Si|[A-G])$/);
       expect(t.match!(t.ref!)).toBe(true);
       expect(`${t.label}${t.hint}${t.spoken}`).not.toMatch(/\d/);
     }
+  });
+
+  it('both names go together: wherever a note is named on a chip or an answer, it has both', () => {
+    for (const lesson of lessons) {
+      for (const step of lesson.steps) {
+        const shown = [
+          ...targetsOf(step).map((t) => t.chip ?? ''),
+          ...choicesOf(step).flatMap((c) => c.options),
+        ];
+        for (const text of shown.flatMap((s) => s.split(' + '))) { // "Sol (G) + Do (C)": both hands
+          if (/^(Do|Re|Mi|Fa|Sol|La|Si|[A-G])[♯#]?($| \()/.test(text)) { // a note, not "A step"
+            expect(text, `${lesson.id}: ${step.title}`).toMatch(/^(Do|Re|Mi|Fa|Sol|La|Si)♯? \([A-G]#?\)$/);
+          }
+        }
+      }
+    }
+  });
+});
+
+describe('the left hand', () => {
+  const ids = lessons.map((l) => l.id);
+  const lesson = (id: string) => lessons.find((l) => l.id === id)!;
+
+  it('comes after the chords, in order: bass clef, tunes, grand staff', () => {
+    const order = ['chords', 'bass-clef', 'left-hand-tunes', 'grand-staff'].map((id) => ids.indexOf(id));
+    expect(order.every((i) => i >= 0)).toBe(true);
+    expect([...order].sort((a, b) => a - b)).toEqual(order);
+  });
+
+  it('the bass clef lesson only uses the five notes of the left-hand position', () => {
+    const pool = lesson('bass-clef').steps.flatMap(targetsOf).map((t) => t.midi ?? t.ref);
+    expect(pool.every((m) => whiteKeys(48, 55).includes(m!))).toBe(true);
+  });
+
+  it('staff quizzes in the left-hand lessons are drawn on the bass staff', () => {
+    for (const id of ['bass-clef', 'left-hand-tunes']) {
+      const cards = lesson(id).steps.flatMap(targetsOf).filter((t) => t.present === 'staff');
+      expect(cards.length, id).toBeGreaterThan(0);
+      expect(cards.every((t) => t.clef === 'bass'), id).toBe(true);
+    }
+  });
+
+  it('sheet music in the left-hand lessons uses the bass or the grand staff', () => {
+    for (const id of ['bass-clef', 'left-hand-tunes', 'grand-staff']) {
+      for (const step of lesson(id).steps) {
+        if (step.kind === 'play' && step.show?.staff) expect(step.show.clef, `${id}: ${step.title}`).toMatch(/bass|grand/);
+        if (step.kind === 'info' && step.staff) expect(step.staff.clef, `${id}: ${step.title}`).toMatch(/bass|grand/);
+      }
+    }
+  });
+
+  it('left-hand tunes stay below middle Do, apart from the landmark itself', () => {
+    const tunes = lesson('left-hand-tunes').steps.filter((s) => s.kind === 'play' && s.show?.staff && !s.show.keys);
+    for (const s of tunes) expect(targetsOf(s).every((t) => t.midi! < 60), s.title).toBe(true);
+  });
+
+  it('"which hand" answers match the staff the note is on', () => {
+    const step = lesson('grand-staff').steps.find((s) => s.title === 'Which hand?')!;
+    for (let run = 0; run < 20; run++) {
+      for (const c of choicesOf(step)) expect(c.options[c.answer]).toBe(c.notes![0] >= 60 ? 'Right hand' : 'Left hand');
+    }
+  });
+});
+
+describe('hands together', () => {
+  const lesson = lessons.find((l) => l.id === 'hands-together')!;
+  const ids = lessons.map((l) => l.id);
+
+  it('comes after the grand staff', () => {
+    expect(ids.indexOf('hands-together')).toBeGreaterThan(ids.indexOf('grand-staff'));
+  });
+
+  it('every "together" asks for one key in each hand, and the melody note is the right hand\'s', () => {
+    const all = lesson.steps.flatMap(targetsOf).filter((t) => t.keys);
+    expect(all.length).toBeGreaterThan(20);
+    for (const t of all) {
+      expect(t.keys!.filter((k) => k < 60)).toHaveLength(1);
+      expect(t.keys!.filter((k) => k >= 60)).toHaveLength(1);
+      expect(t.ref).toBe(Math.max(...t.keys!));
+    }
+  });
+
+  it('the tunes keep the song\'s melody and rhythm, with a bass note on the first beat of every bar', () => {
+    for (const song of songs.filter((s) => ['mary-had-a-little-lamb', 'ode-to-joy'].includes(s.id))) {
+      const step = lesson.steps.find((s) => s.title.startsWith(song.id === 'ode-to-joy' ? 'Ode to Joy' : 'Mary'))!;
+      const targets = targetsOf(step);
+      expect(targets.map((t) => t.ref)).toEqual(song.notes.map((n) => pitchToMidi(n.pitch)));
+      expect(targets.map((t) => t.beats)).toEqual(song.notes.map((n) => n.beats));
+      let at = 0;
+      targets.forEach((t, i) => {
+        expect(!!t.keys, `${song.id} note ${i}`).toBe(at % song.beatsPerBar === 0);
+        at += t.beats!;
+      });
+    }
+  });
+});
+
+describe('rests', () => {
+  const steps = lessons.find((l) => l.id === 'rests')!.steps.filter((s) => s.kind === 'rhythm');
+
+  it('comes right after bars and time signatures', () => {
+    const ids = lessons.map((l) => l.id);
+    expect(ids.indexOf('rests')).toBe(ids.indexOf('bars-and-meter') + 1);
+  });
+
+  it('every exercise has a rest, and the new ones are heard first', () => {
+    for (const s of steps) expect(s.beats.some((b) => b < 0), s.title).toBe(true);
+    const firstOnYourOwn = steps.findIndex((s) => !s.listen);
+    expect(firstOnYourOwn).toBe(steps.length - 1);
+  });
+
+  it('a bar that starts with a rest is not met before rests in the middle', () => {
+    const startsSilent = steps.findIndex((s) => s.beats[0] < 0);
+    const middle = steps.findIndex((s) => s.beats[0] > 0 && s.beats.some((b) => b < 0));
+    expect(middle).toBeLessThan(startsSilent);
   });
 });
 

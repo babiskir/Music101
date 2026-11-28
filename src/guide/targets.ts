@@ -1,60 +1,71 @@
 import { CT_S100 } from '../domain/instrument';
-import { isBlackKey, midiToName, pitchClassLabel, solfege, spokenName } from '../domain/notes';
+import {
+  bothClassNames, bothNames, isBlackKey, pitchClassLabel, pitchClassName, spokenBoth, spokenLetter, spokenName,
+} from '../domain/notes';
 import { FINGER_NAMES, type Finger } from '../domain/song';
 import { LANDMARKS } from './landmarks';
+import type { StaffClef } from '../features/staff/grand';
 import type { Notation, Target } from './types';
 
-/** Quiz card showing a letter (A..G, F#): any octave of that note is right. */
-export function letterTarget(midi: number): Target {
+/** Does this key satisfy the target? (An exact key, or any key its `match` accepts.) */
+export const accepts = (t: Target, midi: number): boolean =>
+  t.keys ? t.keys.includes(midi) : t.midi !== undefined ? midi === t.midi : !!t.match && t.match(midi);
+
+/** The keys between `from` and `to` (inclusive) that would be right for a target. */
+export function keysAccepting(t: Target, from: number, to: number): number[] {
+  const keys: number[] = [];
+  for (let m = from; m <= to; m++) if (accepts(t, m)) keys.push(m);
+  return keys;
+}
+
+/** Quiz card showing a note name (Do..Si, Fa♯): any octave of that note is right. */
+export function nameTarget(midi: number): Target {
   const pc = midi % 12;
   return {
     present: 'name',
     ref: midi,
     match: (m) => m % 12 === pc,
-    label: pitchClassLabel(pc),
-    chip: midiToName(midi),
+    label: pitchClassName(pc),
+    chip: bothNames(midi),
     hint: LANDMARKS[pc],
     spoken: `Play ${spokenName(pc)}`,
   };
 }
 
-/** Quiz card showing a syllable (do re mi...): any octave of that note is right. Black keys fall back to letters. */
-export function solfegeTarget(midi: number): Target {
-  const syllable = solfege(midi);
-  if (!syllable) return letterTarget(midi);
+/** Quiz card showing the letter (C = Do): any octave of that note is right. */
+export function letterTarget(midi: number): Target {
   const pc = midi % 12;
   return {
-    present: 'name',
-    ref: midi,
-    match: (m) => m % 12 === pc,
-    label: syllable,
-    chip: midiToName(midi),
-    hint: `${syllable} is ${pitchClassLabel(pc)}. ${LANDMARKS[pc]}`,
-    spoken: `Play ${syllable}`,
+    ...nameTarget(midi),
+    label: pitchClassLabel(pc),
+    spoken: `Play ${spokenLetter(pc)}`,
   };
 }
 
 /** Quiz card showing one note on the staff: exactly that key is right. */
-export function staffTarget(midi: number): Target {
+export function staffTarget(midi: number, clef: StaffClef = 'treble'): Target {
   const pc = midi % 12;
   return {
     present: 'staff',
+    clef,
     ref: midi,
     midi,
-    hint: `That note is ${pitchClassLabel(pc)}. ${LANDMARKS[pc]}`,
+    hint: `That note is ${bothClassNames(pc)}. ${LANDMARKS[pc]}`,
     spoken: false,
   };
 }
 
 /**
  * A list of quiz prompts drawn from `pool` (MIDI numbers). No pitch twice in a row; in 'mixed' mode
- * the presentation switches between staff and letter, never more than twice in a row the same way.
+ * the presentation switches between staff and name, never more than twice in a row the same way.
+ * Written prompts take turns between Do Re Mi and letters, so each gets half.
  */
-export function quizTargets(pool: number[], count: number, notation: Notation): Target[] {
+export function quizTargets(pool: number[], count: number, notation: Notation, clef: StaffClef = 'treble'): Target[] {
   const out: Target[] = [];
   let prev = -1;
   let streakKind: 'name' | 'staff' = 'name';
   let streak = 0;
+  let asLetter = Math.random() < 0.5;
   for (let i = 0; i < count; i++) {
     const candidates = pool.filter((m) => m !== prev);
     const midi = candidates[Math.floor(Math.random() * candidates.length)];
@@ -63,14 +74,18 @@ export function quizTargets(pool: number[], count: number, notation: Notation): 
     if (notation === 'mixed' && streak >= 2 && kind === streakKind) kind = kind === 'name' ? 'staff' : 'name';
     streak = kind === streakKind ? streak + 1 : 1;
     streakKind = kind;
-    out.push(notation === 'solfege' ? solfegeTarget(midi) : kind === 'name' ? letterTarget(midi) : staffTarget(midi));
+    if (kind === 'staff') out.push(staffTarget(midi, clef));
+    else {
+      out.push(asLetter ? letterTarget(midi) : nameTarget(midi));
+      asLetter = !asLetter;
+    }
   }
   return out;
 }
 
-/** An exact key shown as plain text (e.g. a letter or "Middle C") in a sequence. */
+/** An exact key shown as plain text (e.g. a name or "Middle Do") in a sequence. */
 export function keyTarget(midi: number, label?: string): Target {
-  return { midi, ref: midi, label: label ?? midiToName(midi), chip: midiToName(midi), hint: LANDMARKS[midi % 12] };
+  return { midi, ref: midi, label: label ?? bothNames(midi), chip: bothNames(midi), hint: LANDMARKS[midi % 12] };
 }
 
 /** "Play any key like this" (any key satisfying `match`), e.g. any black key in a group of two. */
@@ -83,17 +98,17 @@ export function fingerPhrase(finger: Finger): string {
   return finger === 1 ? FINGER_NAMES[1] : `${FINGER_NAMES[finger]} finger`;
 }
 
-/** The player sees the note (a letter) and which finger to use, in words. */
+/** The player sees the note name and which finger to use, in words. */
 export function fingerTarget(position: Record<Finger, number>, finger: Finger): Target {
   const midi = position[finger];
   return {
     midi,
     ref: midi,
     finger,
-    label: `${midiToName(midi)} · ${fingerPhrase(finger)}`,
-    chip: midiToName(midi),
-    hint: `Your ${fingerPhrase(finger)} rests on ${midiToName(midi)}.`,
-    spoken: `Play ${spokenName(midi % 12)} with your ${fingerPhrase(finger)}`,
+    label: `${bothNames(midi)} · ${fingerPhrase(finger)}`,
+    chip: bothNames(midi),
+    hint: `Your ${fingerPhrase(finger)} rests on ${bothNames(midi)}.`,
+    spoken: `Play ${spokenBoth(midi % 12)}, with your ${fingerPhrase(finger)}`,
   };
 }
 

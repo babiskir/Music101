@@ -1,5 +1,5 @@
 import { midiToFrequency } from '../domain/notes';
-import { getAudioContext } from './audioContext';
+import { getAudioContext, getOutput } from './audioContext';
 
 /** Short metronome tick at an exact audio-clock time. */
 export function playClick(time: number, accent: boolean): void {
@@ -10,7 +10,7 @@ export function playClick(time: number, accent: boolean): void {
   gain.gain.setValueAtTime(0.0001, time);
   gain.gain.exponentialRampToValueAtTime(accent ? 0.6 : 0.4, time + 0.002);
   gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.05);
-  osc.connect(gain).connect(ctx.destination);
+  osc.connect(gain).connect(getOutput());
   osc.start(time);
   osc.stop(time + 0.06);
 }
@@ -26,7 +26,12 @@ export function playNote(midi: number, time: number, duration: number): void {
   gain.gain.setValueAtTime(0.0001, time);
   gain.gain.exponentialRampToValueAtTime(0.35, time + 0.01);
   gain.gain.exponentialRampToValueAtTime(0.0001, end);
-  osc.connect(gain).connect(ctx.destination);
+  osc.connect(gain).connect(getOutput());
   osc.start(time);
   osc.stop(end + 0.02);
+}
+
+/** Play a note right now (a clicked on-screen key). */
+export function playNow(midi: number, seconds = 0.6): void {
+  playNote(midi, getAudioContext().currentTime, seconds);
 }

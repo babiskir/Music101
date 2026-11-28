@@ -1,4 +1,4 @@
-import { midiToName, pitchToMidi } from '../../domain/notes';
+import { bothNames, pitchToMidi } from '../../domain/notes';
 import { fingerPhrase } from '../../guide/targets';
 import { withTiming, type Song, type TimedNote } from '../../domain/song';
 import type { Step, Target } from '../../guide/types';
@@ -15,8 +15,8 @@ function toTarget(n: TimedNote): Target {
     ref: midi,
     finger: n.finger,
     beats: n.beats,
-    label: n.finger ? `${midiToName(midi)} · ${fingerPhrase(n.finger)}` : midiToName(midi),
-    chip: midiToName(midi),
+    label: n.finger ? `${bothNames(midi)} · ${fingerPhrase(n.finger)}` : bothNames(midi),
+    chip: bothNames(midi),
   };
 }
 
@@ -98,5 +98,5 @@ export const jingleBellsLesson = songLesson(
 export const odeToJoyLesson = songLesson(odeToJoy, 'Your first song: Beethoven, right hand, five fingers, no hand movement.');
 export const twinkleLesson = songLesson(
   twinkleTwinkle,
-  'A familiar melody, with one new note: the pinky stretches one key past G.',
+  'A familiar melody, with one new note: the pinky stretches one key past Sol (G).',
 );

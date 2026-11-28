@@ -1,4 +1,4 @@
-import { midiToName } from '../../domain/notes';
+import { midiToName, noteName } from '../../domain/notes';
 import type { KeyHighlight } from '../../features/keyboard/Keyboard';
 import { LANDMARKS } from '../../guide/landmarks';
 import { anyKey, KEYBOARD_RANGE, keyTarget, whiteKeys } from '../../guide/targets';
@@ -21,8 +21,8 @@ export const keyboardBasics: LessonDef = {
   summary: 'Learn the landmarks of the keyboard by playing them. No counting keys, ever.',
   goals: [
     'Spot the groups of 2 and 3 black keys instantly',
-    'Find any C, and middle C, on your piano',
-    'Play the white keys from C up to the next C, and back down',
+    'Find any Do (C), and middle Do, on your piano',
+    'Play the white keys from Do (C) up to the next Do, and back down',
   ],
   steps: [
     {
@@ -54,29 +54,32 @@ export const keyboardBasics: LessonDef = {
     },
     {
       kind: 'play',
-      title: 'Find a C',
+      title: 'Find a Do (C)',
       body: 'Use the groups as landmarks. You never have to count keys.',
       keyboard: KEYBOARD_RANGE,
       hintAfterMs: 12000,
-      targets: [0, 1, 2].map(() => anyKey('Play a C: the white key just LEFT of a pair of black keys', isC, LANDMARKS[0])),
+      targets: [0, 1, 2].map(() => anyKey('Play a Do (C): the white key just LEFT of a pair of black keys', isC, LANDMARKS[0])),
     },
     {
       kind: 'play',
-      title: 'Middle C',
-      body: 'Middle C is the C closest to the middle of your keyboard. Most beginner songs start near it.',
+      title: 'Middle Do (C)',
+      body: 'Middle Do, also called middle C, is the Do closest to the middle of your keyboard. Most beginner songs start near it.',
       keyboard: KEYBOARD_RANGE,
       hintAfterMs: 10000,
-      targets: [keyTarget(MIDDLE_C, 'Play middle C')],
+      targets: [keyTarget(MIDDLE_C, 'Play middle Do (C)')],
     },
     {
       kind: 'info',
-      title: 'From C to the next C',
-      body: ['The white keys are named with the first seven letters of the alphabet: C D E F G A B, and then C again.'],
+      title: 'From Do to the next Do',
+      body: [
+        'Every white key has two names, and both are worth knowing: Do Re Mi Fa Sol La Si, or the letters C D E F G A B. Then they start again.',
+        'Do and C are the same key, Re and D too, and so on. The app shows you both.',
+      ],
       keyboard: { from: 60, to: 72, keys: octaveKeys },
     },
     {
       kind: 'play',
-      title: 'Up from middle C',
+      title: 'Up from middle Do',
       body: 'Play the white keys one after another, going right.',
       show: { keys: true },
       targets: C_TO_C.map((m) => keyTarget(m)),
@@ -84,7 +87,7 @@ export const keyboardBasics: LessonDef = {
     {
       kind: 'play',
       title: 'Up again: find them yourself',
-      body: `Same notes, but the keys are no longer lit. Think: ${C_TO_C.slice(0, 4).map(midiToName).join(' ')}…`,
+      body: `Same notes, but the keys are no longer lit. Think: ${C_TO_C.slice(0, 4).map(noteName).join(' ')}… or ${C_TO_C.slice(0, 4).map(midiToName).join(' ')}…`,
       names: false,
       keyboard: [60, 72],
       hintAfterMs: 8000,

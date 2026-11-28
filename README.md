@@ -25,22 +25,50 @@ Other scripts: `npm run build` (typecheck + production build), `npm run typechec
 
 Lessons are **played on your piano**, not clicked on the screen. Each lesson is a guided session: the app tells you what
 to play, shows it (keyboard, sheet music, finger numbers), listens, chimes when you are right and moves on by itself.
-Playing any key is the "Next" button on read-and-continue screens. Quizzes show a note either as a **letter** (A to G,
-with sharps like F#; any octave counts) or on the **staff** (exactly that key), or mixed, and never with octave numbers.
+Playing any key is the "Next" button on read-and-continue screens. Quizzes show a note either by **name** (Do Re Mi
+Fa Sol La Si, with sharps like Fa♯; any octave counts) or on the **staff** (exactly that key), or mixed, and never with
+octave numbers.
+
+**Note names** come in two kinds with equal weight: fixed do (Do = C) and the letters. Keys, staff labels, prompts and
+texts show both ("Do (C)"); written quiz prompts show one at a time, half of them each. Inside the code, pitches are
+written with letters (`"C4"`).
 Clicking the on-screen keys still works if no keyboard is connected. The ← → keys on the PC keyboard go back / skip.
 
-Menu bar: **Lessons** (pick a lesson, mark it done), **Keyboard** (connect / disconnect), **Tools** (metronome),
+Menu bar: **Lessons** (pick a lesson, mark it done), **Practice** (the games below), **Keyboard** (connect / disconnect), **Tools** (metronome),
 **Settings** (microphone & input, spoken instructions, reset saved data), **Help**. Open a lesson with `?lesson=<id>`.
 
 | # | Lesson (id) | What you do on the piano |
 |---|---|---|
-| 1 | Meet the keyboard (`keyboard-basics`) | Black-key groups, any C, middle C, the white keys up and down |
-| 2 | Find the note (`find-the-key`) | A letter or a staff note appears: play it; ends with mixed prompts |
+| 1 | Meet the keyboard (`keyboard-basics`) | Black-key groups, any Do (C), middle Do, the white keys up and down |
+| 2 | Find the note (`find-the-key`) | A note name or a staff note appears: play it; ends with mixed prompts |
 | 3 | Hand & fingers (`hand-position`) | Five-finger position for both hands, finger drills with and without lit keys |
 | 4 | Feel the beat (`rhythm-basics`) | Play any key on each note in time with the metronome; the app grades how steady you are |
-| 5 | Reading notes (`reading-notes`) | Read notes on the staff and play them; ends with mixed prompts |
-| 6 | Ode to Joy (`ode-to-joy`) | Learn it two bars at a time, then from the sheet music alone |
-| 7 | Twinkle, Twinkle (`twinkle-twinkle`) | Same method; one new note for the pinky |
+| 5 | Bars and time signatures (`bars-and-meter`) | 4/4 and 3/4, eighth notes, dotted half and dotted quarter notes |
+| 6 | Rests (`rests`) | Quarter, half and whole rests; starting after a rest |
+| 7 | Steps, skips and leaps (`steps-and-skips`) | Melodies as shapes, on the keys and on the staff |
+| 8–12 | The road into reading (`higher-or-lower` … `read-short-tunes`) | Higher or lower, do re mi, three then five notes on the staff, short tunes |
+| 13–17 | Songs and more notes | Mary, Ode to Joy, La Si Do above Sol, Twinkle, Jingle Bells |
+| 18–19 | Landmarks, shortcuts and sharps (`staff-landmarks`, `reading-notes`) | Read any note from three anchors; mnemonics; black keys |
+| 20–21 | New positions, first chords (`new-positions`, `chords`) | Sol position, the scale with thumb-under, Do / Fa / Sol chords |
+| 22 | The bass clef (`bass-clef`) | The left hand's staff: Do Re Mi, then Fa Sol, names fading |
+| 23 | Left-hand tunes (`left-hand-tunes`) | Bass-staff landmarks, then four tunes with the left hand |
+| 24 | The grand staff (`grand-staff`) | Which hand plays a note; the two hands taking turns |
+| 25 | Hands together (`hands-together`) | Thumbs, pinkies, both hands moving together; Mary and Ode to Joy with a left-hand bass note |
+
+## Practice games
+
+The **Practice** menu has short 3D games that revisit the lessons (drawn with three.js, loaded only when you play). Like the
+lessons they are played on your piano; clicking the 3D keys works too. Each has levels, 0 to 3 stars and a best score kept in
+this browser. Open one directly with `?page=game-<id>`.
+
+| Game (id) | Practises | What you do |
+|---|---|---|
+| 💎 Note Rain (`note-rain`) | Find the note, do-re-mi, reading the staff, sharps | Gems with a note name or a staff note fall; play the lowest one's key before it lands. 3 lives |
+| 🥁 Rhythm Road (`rhythm-road`) | Feel the beat, bars and meter | Orbs roll toward a glowing line; press any key as each one touches it. Graded perfect / good / miss; the game learns your usual delay, so a microphone works |
+| 🔓 Chord Lock (`chord-lock`) | Your first chords | A chord name (Do/C, Fa/F, Sol/G) appears: play its three notes in any order and octave, against the clock on later levels |
+| 🐸 Hop Along (`hop-along`) | Steps, skips and leaps; higher or lower | A frog sits on a key; "a skip down": play the key it should land on |
+
+The rules of every game are plain TypeScript (`logic.ts` / `judge.ts`, tested without any graphics); the 3D scene only draws them.
 
 ## Connecting your keyboard
 
@@ -98,7 +126,9 @@ settings (hand, tempo, options). **Reset everything** at the bottom of the page 
 src/
   main.tsx              entry point
   app/                  App shell: MenuBar (Lessons / Keyboard / Settings / Help), goals, progress, global styles
-  pages/                non-lesson screens reached from the menus: microphone & input settings, help
+  pages/                non-lesson screens reached from the menus: microphone & input settings, help, practice list
+  games/                practice games: registry, level menu / results screen (GameScreen), best scores,
+                        three/ (Stage, Piano3D, effects, textures), one folder per game (rules + 3D scene)
   domain/               pure TS, no React/DOM: notes & MIDI math, Song types, Instrument (CT-S100)
   data/songs/           songs as data (add a file + register it in index.ts)
   input/                PianoInput (shared keyboard connection: USB MIDI or mic), PianoStatus,
@@ -123,6 +153,9 @@ Rule of thumb: `domain`, `lib` and `audio` never import from `features` or `less
   finger 1–5), then add it to the array in `src/data/songs/index.ts`.
 - **A page** (settings/help-style screen): add a folder in `src/pages/`, register it in `src/pages/registry.ts`, and
   link to it from a menu in `src/app/App.tsx`. Open one directly with `?page=<id>` (e.g. `?page=mic-settings`).
+- **A practice game:** make a folder in `src/games/` with the rules as a pure class (+ tests) and a 3D scene
+  component (default export taking `GamePlayProps`; copy a small one like Hop Along), then add it to `src/games/registry.ts`.
+  It appears in the Practice menu and gets its own page `?page=game-<id>`.
 - **A lesson:** add a folder in `src/lessons/`, export a component, and register it (with title, summary and
   goals) in `src/lessons/registry.ts`. Order in the registry is the order in the Lessons menu.
 
@@ -130,6 +163,6 @@ Rule of thumb: `domain`, `lib` and `audio` never import from `features` or `less
 
 - Grade timing in play-along mode and the rhythm lesson (the key-press events already carry the moment of each note).
 - Chords: the microphone path detects one note at a time; USB MIDI already delivers every key.
-- Left-hand and two-hand songs, rests, chords.
+- More two-hand songs; block chords in the left hand (USB MIDI hears them, the microphone cannot).
 - Looping a few bars and auto speed-up in song practice.
 - Revisit the lesson folder format (see `docs/NOTES.md`).

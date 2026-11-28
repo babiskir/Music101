@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react';
-import { getAudioContext } from '../audio/audioContext';
+import { getAudioContext, getOutput } from '../audio/audioContext';
+import { createSignal } from '../lib/signal';
 import { isBoolean, storage } from '../lib/storage';
 
 // ---------- sound cues: you should be able to keep your eyes on the keys ----------
@@ -21,7 +22,7 @@ function blip(freq: number, start: number, duration: number, type: OscillatorTyp
   g.gain.setValueAtTime(0.0001, start);
   g.gain.exponentialRampToValueAtTime(gain, start + 0.01);
   g.gain.exponentialRampToValueAtTime(0.0001, start + duration);
-  osc.connect(g).connect(ctx.destination);
+  osc.connect(g).connect(getOutput());
   osc.start(start);
   osc.stop(start + duration + 0.02);
 }
@@ -38,29 +39,23 @@ export function cue(kind: 'ok' | 'done' | 'wrong'): void {
 // ---------- optional spoken instructions ----------
 
 let speakOn = storage.get('guide.speak', false, isBoolean);
-const listeners = new Set<() => void>();
+const speakChanged = createSignal();
 
 export function setSpeak(on: boolean): void {
   speakOn = on;
   storage.set('guide.speak', on);
   if (!on && typeof speechSynthesis !== 'undefined') speechSynthesis.cancel();
-  listeners.forEach((l) => l());
+  speakChanged.emit();
 }
 
 export function useSpeak(): boolean {
-  return useSyncExternalStore(
-    (cb) => {
-      listeners.add(cb);
-      return () => { listeners.delete(cb); };
-    },
-    () => speakOn,
-  );
+  return useSyncExternalStore(speakChanged.subscribe, () => speakOn);
 }
 
 export function speak(text: string): void {
   if (!speakOn || typeof speechSynthesis === 'undefined') return;
   speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text.replace(/#/g, ' sharp'));
+  const u = new SpeechSynthesisUtterance(text.replace(/[#♯]/g, ' sharp').replace(/♭/g, ' flat'));
   u.rate = 0.95;
   speechSynthesis.speak(u);
 }

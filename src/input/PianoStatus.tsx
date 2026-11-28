@@ -1,4 +1,4 @@
-import { midiToName } from '../domain/notes';
+import { bothNames } from '../domain/notes';
 import { usePiano } from './PianoInput';
 
 /** Small keyboard indicator at the right end of the menu bar. Click it for the microphone & input settings. */
@@ -10,7 +10,7 @@ export function PianoStatus({ onOpenSettings }: { onOpenSettings: () => void }) 
     return (
       <button className="piano-status ok" onClick={onOpenSettings} title={`Listening to: ${piano.deviceName ?? 'keyboard'}`}>
         <span className="dot-on" aria-hidden="true" /> {piano.source === 'midi' ? 'Keyboard (USB)' : 'Keyboard (mic)'}{' '}
-        {piano.lastNote ? <>♪ <strong>{midiToName(piano.lastNote.midi)}</strong></> : 'ready'}
+        {piano.lastNote ? <>♪ <strong>{bothNames(piano.lastNote.midi)}</strong></> : 'ready'}
       </button>
     );
   }

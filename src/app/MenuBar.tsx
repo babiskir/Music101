@@ -29,7 +29,7 @@ const ITEM_SELECTOR = '[role="menuitem"]:not(:disabled):not([aria-disabled="true
  * Desktop-style menu bar. Click (or Enter / Down arrow) opens a menu; arrow keys move around;
  * Left/Right switch menus; Escape closes. Closes when you click elsewhere.
  */
-export function MenuBar({ brand, menus, right }: { brand: string; menus: MenuDef[]; right?: ReactNode }) {
+export function MenuBar({ brand, menus, right }: { brand: ReactNode; menus: MenuDef[]; right?: ReactNode }) {
   const [openId, setOpenId] = useState<string | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const triggers = useRef<Record<string, HTMLButtonElement | null>>({});
@@ -121,7 +121,7 @@ export function MenuBar({ brand, menus, right }: { brand: string; menus: MenuDef
                 onMouseEnter={() => { if (openId && !open) openMenu(menu.id, false); }}
                 onKeyDown={(e) => onTriggerKeyDown(e, menu.id)}
               >
-                {menu.label} <span aria-hidden="true">▾</span>
+                {menu.label} <span className="caret" aria-hidden="true">▾</span>
               </button>
               {open && (
                 <div

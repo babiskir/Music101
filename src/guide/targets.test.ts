@@ -1,14 +1,37 @@
 import { describe, expect, it } from 'vitest';
-import { fingerPhrase, fingerTarget, letterTarget, quizTargets, staffTarget, whiteKeys } from './targets';
+import { fingerPhrase, fingerTarget, letterTarget, nameTarget, quizTargets, staffTarget, whiteKeys } from './targets';
 
 const OCTAVE_NUMBER = /\b[A-G][#b]?-?\d\b/; // "C4", "F#3": quizzes must never show these
 
 describe('quiz prompts', () => {
-  it('a letter prompt accepts that note in any octave, and only that note', () => {
-    const t = letterTarget(66); // F#
+  it('a name prompt accepts that note in any octave, and only that note', () => {
+    const t = nameTarget(66); // F sharp
     expect([30, 42, 66, 78].every((m) => t.match!(m))).toBe(true);
     expect(t.match!(65)).toBe(false);
-    expect(t.label).toBe('F#/Gb');
+    expect(t.label).toBe('Fa♯/Sol♭');
+  });
+
+  it('a letter prompt shows the letter, and its hint gives the name', () => {
+    const t = letterTarget(60);
+    expect(t.label).toBe('C');
+    expect(t.hint).toMatch(/^Do \(C\) is/);
+    expect(t.match!(72)).toBe(true);
+  });
+
+  it('written prompts are half Do Re Mi and half letters', () => {
+    for (let run = 0; run < 50; run++) {
+      const labels = quizTargets(whiteKeys(60, 72), 8, 'name').map((t) => t.label!);
+      expect(labels.filter((l) => /^[A-G]$/.test(l))).toHaveLength(4);
+      expect(labels.filter((l) => /^(Do|Re|Mi|Fa|Sol|La|Si)$/.test(l))).toHaveLength(4);
+    }
+    const mixed = quizTargets(whiteKeys(60, 72), 400, 'mixed').filter((t) => t.present === 'name');
+    const letters = mixed.filter((t) => /^[A-G]$/.test(t.label!)).length;
+    expect(Math.abs(letters * 2 - mixed.length)).toBeLessThanOrEqual(1);
+  });
+
+  it('staff prompts can be drawn on the bass staff', () => {
+    expect(quizTargets([48, 50], 4, 'staff', 'bass').every((t) => t.clef === 'bass')).toBe(true);
+    expect(quizTargets([60, 62], 4, 'staff').every((t) => t.clef === 'treble')).toBe(true);
   });
 
   it('a staff prompt accepts exactly that key', () => {

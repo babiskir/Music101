@@ -3,7 +3,7 @@ import type { Step, Target } from '../../guide/types';
 import type { LessonDef } from '../types';
 import { noteTarget } from './builders';
 
-/** White keys from middle C up to the G above the next C: positions in this list are "letters away". */
+/** White keys from middle C up to the G above the next C: positions in this list are "white keys away". */
 const W = whiteKeys(60, 79);
 
 const word = (d: number): string => {
@@ -32,9 +32,9 @@ const steps: Step[] = [
       'The distance between two notes is called an interval. You can read melodies much faster by seeing the shape instead of naming every note.',
     ],
     list: [
-      'A step goes to the very next white key: C to D. On the staff, from a line to the next space.',
-      'A skip jumps over one white key: C to E. On the staff, from line to line or space to space.',
-      'A leap is anything bigger: C to G, for example.',
+      'A step goes to the very next white key: Do to Re (C to D). On the staff, from a line to the next space.',
+      'A skip jumps over one white key: Do to Mi (C to E). On the staff, from line to line or space to space.',
+      'A leap is anything bigger: Do to Sol (C to G), for example.',
       'Repeated note: the same key again.',
     ],
   },
@@ -87,7 +87,7 @@ const steps: Step[] = [
   {
     kind: 'play',
     title: 'Read the shape',
-    body: 'The keys are not lit now. Read the sheet music, with the letters under the notes: is the next note a step, a skip or a leap away?',
+    body: 'The keys are not lit now. Read the sheet music, with the names under the notes: is the next note a step, a skip or a leap away?',
     names: false,
     show: { staff: true, labels: 'all' },
     keyboard: [60, 79],

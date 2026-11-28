@@ -1,27 +1,11 @@
-import type { Step } from '../../guide/types';
 import type { LessonDef } from '../types';
+import { rhythmStep, type RhythmOptions } from './builders';
 
 const how = 'After a count-in, play any key on every note that lights up. Keep it steady.';
 const waltz = 'Three beats in every bar. Press a little harder on the first beat of each bar: ONE two three.';
 const hear = 'You will hear the pattern first. Then, after the count-in, play it yourself: one key for every note.';
 
-interface Options {
-  beatsPerBar?: number;
-  body?: string;
-  bpm?: number;
-  /** Play the pattern aloud before the count-in (use it for anything new). */
-  listen?: boolean;
-}
-
-const rhythm = (title: string, beats: number[], { beatsPerBar = 4, body = how, bpm = 60, listen = false }: Options = {}): Step => ({
-  kind: 'rhythm',
-  title,
-  body,
-  beats,
-  bpm,
-  beatsPerBar,
-  listen,
-});
+const rhythm = (title: string, beats: number[], o: RhythmOptions = {}) => rhythmStep(title, beats, { body: how, ...o });
 
 export const barsAndMeter: LessonDef = {
   id: 'bars-and-meter',

@@ -1,4 +1,4 @@
-import { midiToName } from '../../domain/notes';
+import { bothNames } from '../../domain/notes';
 import type { Finger } from '../../domain/song';
 import type { KeyHighlight } from '../../features/keyboard/Keyboard';
 import type { Step, Target } from '../../guide/types';
@@ -7,11 +7,11 @@ import { noteTarget } from './builders';
 
 type Hand = 'right' | 'left';
 
-/** The three chords used here, as the lowest note of each: C chord, F chord, G chord. */
-const ROOTS = { C: 60, F: 65, G: 67 } as const;
+/** The three chords used here, as the lowest note of each: Do chord, Fa chord, Sol chord. */
+const ROOTS = { Do: 60, Fa: 65, Sol: 67 } as const;
 const OCTAVE = 12;
 
-/** Major triad: the root, then 4 and 7 semitones above it. For C, F and G that is every other white key. */
+/** Major triad: the root, then 4 and 7 semitones above it. For Do, Fa and Sol that is every other white key. */
 const triad = (root: number): number[] => [root, root + 4, root + 7];
 
 /** Finger on each of the three notes: the right hand goes thumb-middle-pinky, the left the other way. */
@@ -34,9 +34,9 @@ const rangeFor = (root: number, hand: Hand): [number, number] => {
   return [low, low + 12];
 };
 
-const chordStep = (name: string, root: number, hand: Hand, help = true): Step => ({
+const chordStep = (root: number, hand: Hand, help = true): Step => ({
   kind: 'play',
-  title: `${name} chord, ${hand} hand`,
+  title: `${bothNames(root)} chord, ${hand} hand`,
   body: help
     ? 'Play the three notes one after the other, up and back down.'
     : 'The keys are not lit. Find the chord by its shape: skip a key between the notes.',
@@ -56,13 +56,13 @@ function chordPicture(root: number): Record<number, KeyHighlight> {
   return keys;
 }
 
-/** C, F, G, C: each chord broken upwards. */
+/** Do, Fa, Sol, Do: each chord broken upwards. */
 function progression(hand: Hand): () => Target[] {
   return () =>
-    (['C', 'F', 'G', 'C'] as const).flatMap((name) => {
+    (['Do', 'Fa', 'Sol', 'Do'] as const).flatMap((name) => {
       const notes = notesFor(ROOTS[name], hand);
       return notes.map((m, i) =>
-        noteTarget(m, { finger: FINGERS[hand][i], note: i === 0 ? `${name} chord` : undefined }),
+        noteTarget(m, { finger: FINGERS[hand][i], note: i === 0 ? `${bothNames(ROOTS[name])} chord` : undefined }),
       );
     });
 }
@@ -76,43 +76,41 @@ const steps: Step[] = [
       'The simplest chord is built from a note and the next two "every-other" keys above it. Start on a white key, skip a key, play the next, skip a key, play the next.',
     ],
     list: [
-      `C chord: ${triad(ROOTS.C).map(midiToName).join(' ')}`,
-      `F chord: ${triad(ROOTS.F).map(midiToName).join(' ')}`,
-      `G chord: ${triad(ROOTS.G).map(midiToName).join(' ')}`,
+      ...[ROOTS.Do, ROOTS.Fa, ROOTS.Sol].map((root) => `${bothNames(root)} chord: ${triad(root).map(bothNames).join(', ')}`),
       'Those three chords are enough to accompany hundreds of songs.',
       'First you play the notes one at a time, called a broken chord (or arpeggio). Later, all three at once.',
     ],
-    keyboard: { from: 60, to: 72, keys: chordPicture(ROOTS.C) },
+    keyboard: { from: 60, to: 72, keys: chordPicture(ROOTS.Do) },
   },
-  chordStep('C', ROOTS.C, 'right'),
+  chordStep(ROOTS.Do, 'right'),
   {
     kind: 'info',
-    title: 'The F chord',
-    body: ['Slide your hand up: thumb on F, middle finger on A, pinky on C. Same shape, new home.'],
-    keyboard: { from: 65, to: 77, keys: chordPicture(ROOTS.F) },
+    title: 'The Fa (F) chord',
+    body: ['Slide your hand up: thumb on Fa (F), middle finger on La (A), pinky on Do (C). Same shape, new home.'],
+    keyboard: { from: 65, to: 77, keys: chordPicture(ROOTS.Fa) },
   },
-  chordStep('F', ROOTS.F, 'right'),
+  chordStep(ROOTS.Fa, 'right'),
   {
     kind: 'info',
-    title: 'The G chord',
-    body: ['Thumb on G, middle finger on B, pinky on D.'],
-    keyboard: { from: 67, to: 79, keys: chordPicture(ROOTS.G) },
+    title: 'The Sol (G) chord',
+    body: ['Thumb on Sol (G), middle finger on Si (B), pinky on Re (D).'],
+    keyboard: { from: 67, to: 79, keys: chordPicture(ROOTS.Sol) },
   },
-  chordStep('G', ROOTS.G, 'right'),
-  chordStep('C', ROOTS.C, 'right', false),
-  chordStep('F', ROOTS.F, 'right', false),
-  chordStep('G', ROOTS.G, 'right', false),
+  chordStep(ROOTS.Sol, 'right'),
+  chordStep(ROOTS.Do, 'right', false),
+  chordStep(ROOTS.Fa, 'right', false),
+  chordStep(ROOTS.Sol, 'right', false),
   {
     kind: 'info',
     title: 'Left hand chords',
     body: [
       'Chords usually live in the left hand, under the melody. The left hand plays the same chords an octave lower, and the fingers run the other way: pinky on the lowest note, thumb on the highest.',
     ],
-    keyboard: { from: 48, to: 60, keys: chordPicture(ROOTS.C - OCTAVE) },
+    keyboard: { from: 48, to: 60, keys: chordPicture(ROOTS.Do - OCTAVE) },
   },
-  chordStep('C', ROOTS.C, 'left'),
-  chordStep('F', ROOTS.F, 'left'),
-  chordStep('G', ROOTS.G, 'left'),
+  chordStep(ROOTS.Do, 'left'),
+  chordStep(ROOTS.Fa, 'left'),
+  chordStep(ROOTS.Sol, 'left'),
   {
     kind: 'info',
     title: 'Block chords',
@@ -123,7 +121,7 @@ const steps: Step[] = [
   {
     kind: 'play',
     title: 'Chord progression, right hand',
-    body: 'Four chords in a row: C, F, G, C. Each is played as a broken chord, going up.',
+    body: 'Four chords in a row: Do, Fa, Sol, Do (C, F, G, C). Each is played as a broken chord, going up.',
     show: { keys: true, fingers: true },
     keyboard: [60, 79],
     targets: progression('right'),
@@ -140,10 +138,10 @@ const steps: Step[] = [
 export const chords: LessonDef = {
   id: 'chords',
   title: 'Your first chords',
-  summary: 'Three notes at a time: the C, F and G chords, played one note after another in both hands.',
+  summary: 'Three notes at a time: the Do (C), Fa (F) and Sol (G) chords, played one note after another in both hands.',
   goals: [
     'Know that a chord is built by skipping every other white key',
-    'Play the C, F and G chords as broken chords with the right fingers',
+    'Play the Do (C), Fa (F) and Sol (G) chords as broken chords with the right fingers',
     'Move between those chords in a short progression',
   ],
   steps,

@@ -1,7 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { midiToPitch } from '../domain/notes';
 import { Keyboard } from '../features/keyboard/Keyboard';
+import { playNow } from '../audio/sounds';
 import { StaffNotation } from '../features/staff/StaffNotation';
+import { useRecentKeys } from '../features/staff/useRecentKeys';
 import { labelsFor } from './labels';
 import { usePianoNotes } from '../input/PianoInput';
 import type { InfoStep } from './types';
@@ -12,6 +14,7 @@ const GRACE_MS = 700; // ignore the key press that just finished the previous st
 export function InfoStepView({ step, onDone }: { step: InfoStep; onDone: () => void }) {
   const mountedAt = useRef(performance.now());
   const finished = useRef(false);
+  const recent = useRecentKeys();
   useEffect(() => {
     mountedAt.current = performance.now();
     finished.current = false;
@@ -39,7 +42,9 @@ export function InfoStepView({ step, onDone }: { step: InfoStep; onDone: () => v
             activeIndex={-1}
             maxBarsPerLine={1}
             timeSignature={false}
-            labels={labelsFor(step.staff.notes, step.staff.labels, step.staff.solfege)}
+            labels={labelsFor(step.staff.notes, step.staff.labels)}
+            clef={step.staff.clef}
+            glow={recent.keys}
           />
         </div>
       )}
@@ -49,10 +54,16 @@ export function InfoStepView({ step, onDone }: { step: InfoStep; onDone: () => v
           to={step.keyboard.to}
           highlights={step.keyboard.keys ?? {}}
           showNames={step.keyboard.names ?? true}
+          onKeyPress={(m) => {
+            playNow(m);
+            recent.press(m);
+          }}
         />
       )}
-      <p className="continue-line">🎹 Play any key on your keyboard to continue</p>
-      <button onClick={go}>Continue</button>
+      <div className="continue">
+        <button className="primary" onClick={go}>Continue</button>
+        <span className="muted">or play any key on your piano</span>
+      </div>
     </div>
   );
 }

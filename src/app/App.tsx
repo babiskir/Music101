@@ -1,12 +1,16 @@
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
+import { games } from '../games/registry';
 import { setSpeak, useSpeak } from '../guide/feedback';
 import { GuidedLesson } from '../guide/GuidedLesson';
 import { PianoStatus } from '../input/PianoStatus';
 import { usePiano } from '../input/PianoInput';
+import { classOf, classes } from '../lessons/classes';
 import { lessons } from '../lessons/registry';
 import { useProgress } from '../lessons/progress';
 import { storage } from '../lib/storage';
 import { pages } from '../pages/registry';
+import { ArrowLeftIcon, BrandMark, StopIcon } from './icons';
+import { stopAllSound } from '../audio/audioContext';
 import { MenuBar, type MenuDef } from './MenuBar';
 
 const REPO_URL = 'https://github.com/babiskir/Music101';
@@ -41,6 +45,14 @@ export function App() {
   const nextLesson = lessons[index + 1];
   const connectionProblem = piano.error ?? (piano.mic.state.status === 'error' ? piano.mic.state.error : undefined);
   const page = pageId ? pages.find((p) => p.id === pageId) ?? null : null;
+  const currentClass = classOf(current.id);
+  const classNo = currentClass ? classes.indexOf(currentClass) + 1 : 0;
+  const lessonNo = currentClass ? currentClass.lessonIds.indexOf(current.id) + 1 : index + 1;
+  /** "2.1" = class 2, lesson 1. */
+  const numberOf = (id: string) => {
+    const c = classOf(id);
+    return c ? `${classes.indexOf(c) + 1}.${c.lessonIds.indexOf(id) + 1}` : String(lessons.findIndex((l) => l.id === id) + 1);
+  };
 
   const openLesson = (id: string) => {
     setLessonId(id);
@@ -50,6 +62,7 @@ export function App() {
   };
 
   const openPage = (id: string) => {
+    stopAllSound();
     setPageId(id);
     window.scrollTo({ top: 0 });
   };
@@ -66,16 +79,23 @@ export function App() {
       id: 'lessons',
       label: 'Lessons',
       items: [
-        ...lessons.map((l, i) => ({
-          id: l.id,
-          label: `${done.includes(l.id) ? '✓ ' : ''}${i + 1}. ${l.title}`,
-          current: !page && l.id === current.id,
-          onSelect: () => openLesson(l.id),
-        })),
+        ...classes.flatMap((c, ci) => [
+          ...(ci > 0 ? [{ id: `sep-${c.id}`, separator: true }] : []),
+          { id: `class-${c.id}`, heading: true, label: `Class ${ci + 1} · ${c.title}` },
+          ...c.lessonIds.map((id) => {
+            const l = lessons.find((x) => x.id === id)!;
+            return {
+              id: l.id,
+              label: `${done.includes(l.id) ? '✓ ' : ''}${numberOf(l.id)} ${l.title}`,
+              current: !page && l.id === current.id,
+              onSelect: () => openLesson(l.id),
+            };
+          }),
+        ]),
         { id: 'sep-progress', separator: true },
         {
           id: 'mark-done',
-          label: isDone ? `Undo “done” for lesson ${index + 1}` : `Mark lesson ${index + 1} as done`,
+          label: isDone ? `Undo “done” for lesson ${numberOf(current.id)}` : `Mark lesson ${numberOf(current.id)} as done`,
           onSelect: () => toggle(current.id),
         },
         {
@@ -84,6 +104,26 @@ export function App() {
           disabled: !nextLesson,
           onSelect: () => nextLesson && openLesson(nextLesson.id),
         },
+      ],
+    },
+    {
+      id: 'practice',
+      label: 'Practice',
+      items: [
+        { id: 'runs', label: 'Practice runs…', current: pageId === 'runs', onSelect: () => openPage('runs') },
+        { id: 'run-daily', label: 'Daily run', current: pageId === 'run-daily', onSelect: () => openPage('run-daily') },
+        ...(currentClass
+          ? [{ id: 'run-class', label: `Run: ${currentClass.title}`, current: pageId === `run-${currentClass.id}`, onSelect: () => openPage(`run-${currentClass.id}`) }]
+          : []),
+        { id: 'sep-runs', separator: true },
+        { id: 'practice-all', label: 'All practice games…', current: pageId === 'practice', onSelect: () => openPage('practice') },
+        { id: 'sep-games', separator: true },
+        ...games.map((g) => ({
+          id: g.id,
+          label: g.title,
+          current: pageId === `game-${g.id}`,
+          onSelect: () => openPage(`game-${g.id}`),
+        })),
       ],
     },
     {
@@ -138,9 +178,16 @@ export function App() {
   return (
     <main className="app">
       <MenuBar
-        brand="🎹 Music101"
+        brand={<><BrandMark />Music101</>}
         menus={menus}
-        right={<PianoStatus onOpenSettings={() => openPage('mic-settings')} />}
+        right={
+          <>
+            <button className="ghost stop-sound" onClick={stopAllSound} title="Silence everything the app is playing">
+              <StopIcon /> Stop sound
+            </button>
+            <PianoStatus onOpenSettings={() => openPage('mic-settings')} />
+          </>
+        }
       />
 
       {connectionProblem && !piano.connected && <p className="hint-box error">{connectionProblem}</p>}
@@ -148,22 +195,36 @@ export function App() {
       {page ? (
         <>
           <div className="page-head">
-            <button onClick={() => setPageId(null)}>← Back to lesson {index + 1}: {current.title}</button>
+            <button className="ghost" onClick={() => setPageId(null)}>
+              <ArrowLeftIcon /> Back to lesson {numberOf(current.id)}: {current.title}
+            </button>
           </div>
-          <page.Component key={page.id} openPage={openPage} />
+          <Suspense fallback={<p className="muted">Loading…</p>}>
+            <page.Component key={page.id} openPage={openPage} />
+          </Suspense>
         </>
       ) : (
         <>
-          <section className="card goals">
-            <h1 className="lesson-title">
-              {index + 1}. {current.title} <small>lesson {index + 1} of {lessons.length}{isDone ? ' · ✓ done' : ''}</small>
-            </h1>
-            <p className="class-summary">{current.summary}</p>
-            <h3>After this lesson you can…</h3>
-            <ul>
-              {current.goals.map((g) => <li key={g}>{g}</li>)}
-            </ul>
-          </section>
+          <header className="lesson-head">
+            <p className="eyebrow">
+              {currentClass ? <>Class {classNo} · {currentClass.title} · Lesson {lessonNo} of {currentClass.lessonIds.length}</> : <>Lesson {index + 1} of {lessons.length}</>}
+              {isDone && <span className="badge done">Done</span>}
+            </p>
+            <h1>{current.title}</h1>
+            <p className="lead">{current.summary}</p>
+            <details className="goals">
+              <summary>What you will be able to do</summary>
+              <ul>
+                {current.goals.map((g) => <li key={g}>{g}</li>)}
+              </ul>
+            </details>
+            {currentClass && (
+              <p className="class-run-link muted">
+                Feel like you keep doing the same thing?{' '}
+                <button className="link" onClick={() => openPage(`run-${currentClass.id}`)}>Do a random run of class {classNo}</button>
+              </p>
+            )}
+          </header>
 
           {/* key so each lesson starts fresh */}
           <GuidedLesson
@@ -176,10 +237,6 @@ export function App() {
         </>
       )}
 
-      <p className="reset-row">
-        Progress and settings are saved in this browser.{' '}
-        <button className="link" onClick={resetAll}>Reset everything</button>
-      </p>
     </main>
   );
 }

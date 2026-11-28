@@ -1,17 +1,17 @@
-import { midiToName } from '../../domain/notes';
+import { bothNames } from '../../domain/notes';
 import { anyKey, quizTargets, whiteKeys } from '../../guide/targets';
 import type { Choice, Target } from '../../guide/types';
 import type { LessonDef } from '../types';
-import { noteTarget, pick, readTune, syllableTarget } from './builders';
+import { noteTarget, pick, readTune } from './builders';
 
 /**
  * The road into reading music, in small steps. One new idea per lesson:
  *   1 higher or lower (no names)  2 do re mi  3 three notes  4 five notes  5 short tunes
  *   6 the notes above  7 landmarks   (8 shortcuts and sharps lives in readingNotes.ts)
- * Letters printed under the notes fade away inside each lesson: all, then the first, then none.
+ * Names (both kinds) printed under the notes fade away inside each lesson: all, then the first, then none.
  */
 
-const C_TO_G = whiteKeys(60, 67); // C D E F G: the five-finger position
+const C_TO_G = whiteKeys(60, 67); // C D E F G (Do to Sol): the five-finger position
 const C_TO_C = whiteKeys(60, 72);
 
 const lit = { keys: true, staff: true } as const;
@@ -103,79 +103,79 @@ export const higherOrLower: LessonDef = {
 
 // ---------------------------------------------------------------- 2. do re mi
 
-const syllables = (midis: number[]) => () => midis.map(syllableTarget);
+const sing = (midis: number[]) => () => midis.map((m) => noteTarget(m));
 
 export const doReMi: LessonDef = {
   id: 'do-re-mi',
-  title: 'Do re mi',
-  summary: 'Singable names for the white keys, a friendly bridge to letters and staff notes.',
+  title: 'Do re mi and C D E',
+  summary: 'Two names for every key: practise both until they come by themselves. The last stop before the staff.',
   goals: [
-    'Know do re mi fa sol la si and the letters they stand for',
+    'Know Do Re Mi Fa Sol La Si and C D E F G A B by heart',
     'Say the name of each note as you play it',
-    'Play a tune from its syllables',
+    'Switch between the two kinds of names without thinking',
   ],
   steps: [
     {
       kind: 'info',
-      title: 'Do re mi fa sol la si',
+      title: 'Two names for every key',
       body: [
-        'Singers name the notes with syllables. They are just other names for the same white keys, and "do" is always C.',
-        'Say them out loud as you play: it connects your ears, your voice and your fingers.',
+        'Do Re Mi and the letters name the same white keys, and C is always Do. Musicians around the world use one or the other, so learn both.',
+        'Do Re Mi was made for singing: say the names out loud as you play, to connect your ears, your voice and your fingers.',
       ],
       list: [
-        'do = C   re = D   mi = E   fa = F',
-        'sol = G   la = A   si = B   then do again, one octave up',
+        'Do = C   Re = D   Mi = E   Fa = F',
+        'Sol = G   La = A   Si = B   then Do again, one octave up',
       ],
-      staff: { notes: [60, 62, 64, 65, 67, 69, 71, 72], labels: 'all', solfege: true },
+      staff: { notes: [60, 62, 64, 65, 67, 69, 71, 72], labels: 'all' },
       keyboard: { from: 60, to: 72, names: true },
     },
     {
       kind: 'play',
-      title: 'Up: do re mi fa sol',
+      title: 'Up: Do to Sol (C to G)',
       body: 'Say each name as you play it.',
       show: { keys: true },
       keyboard: [60, 72],
-      targets: syllables([60, 62, 64, 65, 67]),
+      targets: sing([60, 62, 64, 65, 67]),
     },
     {
       kind: 'play',
       title: 'The whole scale, going up',
       show: { keys: true },
       keyboard: [60, 72],
-      targets: syllables(C_TO_C),
+      targets: sing(C_TO_C),
     },
     {
       kind: 'play',
       title: 'And back down',
       show: { keys: true },
       keyboard: [60, 72],
-      targets: syllables([...C_TO_C].reverse()),
+      targets: sing([...C_TO_C].reverse()),
     },
     {
       kind: 'play',
       title: 'Which key is it?',
-      body: 'A syllable appears: play that key.',
+      body: 'A name appears: play that key.',
       keyboard: [60, 72],
       hintAfterMs: 12000,
-      targets: () => quizTargets(C_TO_G, 6, 'solfege'),
+      targets: () => quizTargets(C_TO_G, 6, 'name'),
     },
     {
       kind: 'play',
-      title: 'Find it without the letters',
-      body: 'The letters are gone from the keys. Say the syllable and find it.',
+      title: 'Find it without the names',
+      body: 'The names are gone from the keys. Say both names and find it.',
       names: false,
       keyboard: [60, 72],
       hintAfterMs: 12000,
-      targets: () => quizTargets(C_TO_C, 8, 'solfege'),
+      targets: () => quizTargets(C_TO_C, 8, 'name'),
     },
     {
       kind: 'play',
-      title: 'A tune in syllables',
-      body: 'You know this one. Sing it as you play: do do sol sol la la sol.',
+      title: 'A tune to sing',
+      body: 'You know this one. Sing it as you play: Do Do Sol Sol La La Sol (C C G G A A G).',
       names: false,
       keyboard: [60, 72],
       hintAfterMs: 12000,
-      targets: syllables([60, 60, 67, 67, 69, 69, 67]),
+      targets: sing([60, 60, 67, 67, 69, 69, 67]),
     },
   ],
 };
@@ -185,10 +185,10 @@ export const doReMi: LessonDef = {
 export const threeNotes: LessonDef = {
   id: 'staff-three-notes',
   title: 'Three notes on the staff',
-  summary: 'Just C, D and E: where they sit on the staff, with their letters printed underneath at first.',
+  summary: 'Just Do, Re and Mi (C D E): where they sit on the staff, with their names printed underneath at first.',
   goals: [
-    'Find middle C, D and E on the staff',
-    'Play the note you see, with the letter under it, then without it',
+    'Find middle Do, Re and Mi (C D E) on the staff',
+    'Play the note you see, with the name under it, then without it',
   ],
   steps: [
     {
@@ -196,30 +196,30 @@ export const threeNotes: LessonDef = {
       title: 'Lines and spaces',
       body: [
         'The staff has five lines, and notes sit ON a line or in a SPACE between two lines. We count lines from the bottom.',
-        'Three notes to start with: C sits on its own short line under the staff. D hangs just under the bottom line. E sits on the bottom line.',
-        'Each note has its letter (and its syllable) printed under it for now.',
+        'Three notes to start with: Do (C) sits on its own short line under the staff. Re (D) hangs just under the bottom line. Mi (E) sits on the bottom line.',
+        'Each note has both its names printed under it for now.',
       ],
-      staff: { notes: [60, 62, 64], labels: 'all', solfege: true },
+      staff: { notes: [60, 62, 64], labels: 'all' },
       keyboard: { from: 60, to: 67, keys: { 60: { kind: 'current' }, 62: { kind: 'current' }, 64: { kind: 'current' } } },
     },
     {
       kind: 'play',
       title: 'Up the three notes',
-      show: { ...lit, labels: 'all', solfege: true },
+      show: { ...lit, labels: 'all' },
       keyboard: [60, 67],
       targets: () => [60, 62, 64].map((m) => noteTarget(m)),
     },
     {
       kind: 'play',
       title: 'Up and down',
-      show: { ...lit, labels: 'all', solfege: true },
+      show: { ...lit, labels: 'all' },
       keyboard: [60, 67],
       targets: () => [60, 62, 64, 62, 60, 62, 64].map((m) => noteTarget(m)),
     },
     {
       kind: 'play',
-      title: 'Read the note: letters help you',
-      body: 'A note on the staff with its letter below. Play it.',
+      title: 'Read the note: names help you',
+      body: 'A note on the staff with its name below. Play it.',
       names: false,
       keyboard: [60, 67],
       show: { labels: 'all' },
@@ -229,7 +229,7 @@ export const threeNotes: LessonDef = {
     {
       kind: 'play',
       title: 'Read the note: fewer helpers',
-      body: 'Only the very first note shows its letter.',
+      body: 'Only the very first note shows its name.',
       names: false,
       keyboard: [60, 67],
       show: { labels: 'first' },
@@ -239,7 +239,7 @@ export const threeNotes: LessonDef = {
     {
       kind: 'play',
       title: 'Read the note: on your own',
-      body: 'No letters now. Use the line and the space: short line under the staff, just under the bottom line, on the bottom line.',
+      body: 'No names now. Use the line and the space: short line under the staff, just under the bottom line, on the bottom line.',
       names: false,
       keyboard: [60, 67],
       hintAfterMs: 12000,
@@ -253,11 +253,11 @@ export const threeNotes: LessonDef = {
 export const fiveNotes: LessonDef = {
   id: 'staff-five-notes',
   title: 'Five notes: your hand position',
-  summary: 'C D E F G, the five notes under your right hand, on the staff.',
+  summary: 'Do to Sol (C to G), the five notes under your right hand, on the staff.',
   goals: [
-    'Find C, D, E, F and G on the staff',
+    'Find Do, Re, Mi, Fa and Sol (C to G) on the staff',
     'Connect each finger of your hand position to a note on the page',
-    'Read the five notes with the letters fading away',
+    'Read the five notes with the names fading away',
   ],
   steps: [
     {
@@ -265,9 +265,9 @@ export const fiveNotes: LessonDef = {
       title: 'The notes of your hand',
       body: [
         'You already know these five keys from your hand position. Here is where each one lives on the staff.',
-        'F is the first space, and G is the second line. Notice: lines and spaces take turns, just like the white keys, one after the other.',
+        'Fa (F) is the first space, and Sol (G) is the second line. Notice: lines and spaces take turns, just like the white keys, one after the other.',
       ],
-      staff: { notes: [60, 62, 64, 65, 67], labels: 'all', solfege: true },
+      staff: { notes: [60, 62, 64, 65, 67], labels: 'all' },
       keyboard: {
         from: 60,
         to: 67,
@@ -277,7 +277,7 @@ export const fiveNotes: LessonDef = {
     {
       kind: 'play',
       title: 'Climb the staff',
-      show: { ...lit, labels: 'all', solfege: true },
+      show: { ...lit, labels: 'all' },
       keyboard: [60, 67],
       targets: () => C_TO_G.map((m) => noteTarget(m)),
     },
@@ -300,7 +300,7 @@ export const fiveNotes: LessonDef = {
     },
     {
       kind: 'play',
-      title: 'Read the note: letters help you',
+      title: 'Read the note: names help you',
       names: false,
       keyboard: [60, 67],
       show: { labels: 'all' },
@@ -326,8 +326,8 @@ export const fiveNotes: LessonDef = {
     },
     {
       kind: 'play',
-      title: 'Mixed: staff and letters',
-      body: 'Some prompts are on the staff, some are letters.',
+      title: 'Mixed: staff and names',
+      body: 'Some prompts are on the staff, some are names.',
       names: false,
       keyboard: [60, 67],
       hintAfterMs: 12000,
@@ -338,19 +338,19 @@ export const fiveNotes: LessonDef = {
 
 // ---------------------------------------------------------------- 5. short tunes
 
-const MARY = [64, 62, 60, 62, 64, 64, 64];
-const BUNS = [64, 62, 60, 64, 62, 60, 60, 60, 60, 60, 62, 62, 62, 62, 64, 62, 60];
-const CLAIR = [60, 60, 60, 62, 64, 62, 60, 64, 62, 62, 60];
-const ODE = [64, 64, 65, 67, 67, 65, 64, 62, 60, 60, 62, 64, 64, 62, 62];
+export const MARY = [64, 62, 60, 62, 64, 64, 64];
+export const BUNS = [64, 62, 60, 64, 62, 60, 60, 60, 60, 60, 62, 62, 62, 62, 64, 62, 60];
+export const CLAIR = [60, 60, 60, 62, 64, 62, 60, 64, 62, 62, 60];
+export const ODE = [64, 64, 65, 67, 67, 65, 64, 62, 60, 60, 62, 64, 64, 62, 62];
 
 export const shortTunes: LessonDef = {
   id: 'read-short-tunes',
   title: 'Read short tunes',
-  summary: 'Four well-known tunes, read from the sheet. The letters fade from all to none.',
+  summary: 'Four well-known tunes, read from the sheet. The names fade from all to none.',
   goals: [
     'Read a whole line of notes from left to right',
     'See the shape of a tune: repeats, steps, skips',
-    'Play a tune from sheet music with no letters at all',
+    'Play a tune from sheet music with no names at all',
   ],
   steps: [
     {
@@ -358,13 +358,13 @@ export const shortTunes: LessonDef = {
       title: 'Reading a tune',
       body: [
         'Real music is read from left to right, a few notes at a time. Do not name every note: look at the SHAPE. Does it go up, down or stay? A step or a skip?',
-        'Each tune below is in your hand position, C to G. The first has its letters under the notes; the last has none.',
+        'Each tune below is in your hand position, Do to Sol (C to G). The first has its names under the notes; the last has none.',
       ],
     },
     {
       kind: 'play',
       title: 'Mary had a little lamb',
-      body: 'The keys are lit, the letters are on the sheet. Look at the shape: down by steps, up again, then three of the same.',
+      body: 'The keys are lit, the names are on the sheet. Look at the shape: down by steps, up again, then three of the same.',
       show: { ...lit, labels: 'all' },
       keyboard: [60, 67],
       names: false,
@@ -373,7 +373,7 @@ export const shortTunes: LessonDef = {
     {
       kind: 'play',
       title: 'Hot cross buns',
-      body: 'Letters on the sheet, keys not lit.',
+      body: 'Names on the sheet, keys not lit.',
       show: { staff: true, labels: 'all' },
       keyboard: [60, 67],
       names: false,
@@ -383,7 +383,7 @@ export const shortTunes: LessonDef = {
     {
       kind: 'play',
       title: 'Au clair de la lune',
-      body: 'Only the first note has its letter.',
+      body: 'Only the first note has its name.',
       show: { staff: true, labels: 'first' },
       keyboard: [60, 67],
       names: false,
@@ -392,7 +392,7 @@ export const shortTunes: LessonDef = {
     },
     {
       kind: 'play',
-      title: 'Ode to Joy, no letters',
+      title: 'Ode to Joy, no names',
       body: 'Just the sheet music. You know this one: look at the shape.',
       show: { staff: true },
       keyboard: [60, 67],
@@ -407,24 +407,24 @@ export const shortTunes: LessonDef = {
 
 export const reachHigher: LessonDef = {
   id: 'staff-reach-higher',
-  title: 'Reaching higher: A, B and the next C',
-  summary: 'Three more notes on the staff, up to the C above, to complete the first octave.',
-  goals: ['Find A, B and the next C on the staff', 'Read all the notes from one C to the next'],
+  title: 'Reaching higher: La, Si, Do (A, B, C)',
+  summary: 'Three more notes on the staff, up to the Do above, to complete the first octave.',
+  goals: ['Find La, Si and the next Do (A, B, C) on the staff', 'Read all the notes from one Do (C) to the next'],
   steps: [
     {
       kind: 'info',
-      title: 'Above the G',
+      title: 'Above the Sol (G)',
       body: [
-        'Keep climbing: A sits in the second space, B on the middle line, and C in the third space.',
-        'Together with what you know, that is every white key from one C to the next: do re mi fa sol la si do.',
+        'Keep climbing: La (A) sits in the second space, Si (B) on the middle line, and Do (C) in the third space.',
+        'Together with what you know, that is every white key from one Do to the next: Do Re Mi Fa Sol La Si Do (C D E F G A B C).',
       ],
-      staff: { notes: [69, 71, 72], labels: 'all', solfege: true },
+      staff: { notes: [69, 71, 72], labels: 'all' },
       keyboard: { from: 60, to: 72, keys: { 69: { kind: 'current' }, 71: { kind: 'current' }, 72: { kind: 'current' } } },
     },
     {
       kind: 'play',
       title: 'The whole climb',
-      show: { ...lit, labels: 'all', solfege: true },
+      show: { ...lit, labels: 'all' },
       keyboard: [60, 72],
       targets: () => C_TO_C.map((m) => noteTarget(m)),
     },
@@ -437,7 +437,7 @@ export const reachHigher: LessonDef = {
     },
     {
       kind: 'play',
-      title: 'Read the new notes: letters help you',
+      title: 'Read the new notes: names help you',
       names: false,
       keyboard: [60, 72],
       show: { labels: 'all' },
@@ -484,7 +484,7 @@ const stepOrSkipChoices = (): Choice[] =>
     const { from, to, d } = landmarkPair();
     const size = Math.abs(d);
     return {
-      prompt: `The first note is ${midiToName(from)}. How far away is the second note?`,
+      prompt: `The first note is ${bothNames(from)}. How far away is the second note?`,
       notes: [from, to],
       labels: 'first',
       options: ['A step', 'A skip', 'A leap'],
@@ -500,13 +500,13 @@ const nameFromLandmarkChoices = (): Choice[] =>
       .filter((m) => m % 12 !== to % 12)
       .sort(() => Math.random() - 0.5)
       .slice(0, 2);
-    const options = [to, ...others].map(midiToName).sort(() => Math.random() - 0.5);
+    const options = [to, ...others].map(bothNames).sort(() => Math.random() - 0.5);
     return {
-      prompt: `Start from ${midiToName(from)}. What is the second note?`,
+      prompt: `Start from ${bothNames(from)}. What is the second note?`,
       notes: [from, to],
       labels: 'first',
       options,
-      answer: options.indexOf(midiToName(to)),
+      answer: options.indexOf(bothNames(to)),
       hint: 'Count the lines and spaces from the first note: that many white keys away.',
     };
   });
@@ -516,7 +516,7 @@ export const landmarks: LessonDef = {
   title: 'Landmark notes',
   summary: 'Three anchor notes, and a way to read every other note as a step or a skip from one.',
   goals: [
-    'Recognise middle C, the G and the high C straight away',
+    'Recognise middle Do (C), the Sol (G) and the high Do straight away',
     'Read any other note by its distance from a landmark',
   ],
   steps: [
@@ -527,11 +527,11 @@ export const landmarks: LessonDef = {
         'You do not have to name every note from the bottom. Learn three landmarks and read the others as a step or a skip from one of them.',
       ],
       list: [
-        'Middle C: the note on its own short line under the staff.',
-        'G: the second line from the bottom. The curl of the treble clef circles around it.',
-        'High C: the third space, a full octave above middle C.',
+        'Middle Do (C): the note on its own short line under the staff.',
+        'Sol (G): the second line from the bottom. The curl of the treble clef circles around it.',
+        'High Do (C): the third space, a full octave above middle Do.',
       ],
-      staff: { notes: [60, 67, 72], labels: 'all', solfege: true },
+      staff: { notes: [60, 67, 72], labels: 'all' },
     },
     {
       kind: 'play',
@@ -543,7 +543,7 @@ export const landmarks: LessonDef = {
     {
       kind: 'play',
       title: 'Landmarks without help',
-      body: 'Middle C, G or high C. Find them from the staff.',
+      body: 'Middle Do, Sol or high Do (C, G, C). Find them from the staff.',
       names: false,
       keyboard: [60, 72],
       hintAfterMs: 12000,
@@ -564,7 +564,7 @@ export const landmarks: LessonDef = {
     {
       kind: 'play',
       title: 'Read from the landmarks',
-      body: 'Every note is one or two away from a landmark. No letters.',
+      body: 'Every note is one or two away from a landmark. No names.',
       names: false,
       keyboard: [60, 72],
       hintAfterMs: 12000,
@@ -572,7 +572,7 @@ export const landmarks: LessonDef = {
     },
     {
       kind: 'play',
-      title: 'Mixed: staff and letters',
+      title: 'Mixed: staff and names',
       names: false,
       keyboard: [60, 72],
       hintAfterMs: 12000,

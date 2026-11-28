@@ -36,16 +36,16 @@ const gTargets = (order: Finger[]) => () => order.map((f) => noteTarget(G_POSITI
 const steps: Step[] = [
   {
     kind: 'info',
-    title: 'A new home: G position',
+    title: 'A new home: Sol (G) position',
     body: [
-      'Your hand does not have to live on middle C. Put the thumb on G instead and each finger still gets one white key: G A B C D, thumb to pinky.',
+      'Your hand does not have to live on middle Do (C). Put the thumb on Sol (G) instead and each finger still gets one white key: Sol La Si Do Re (G A B C D), thumb to pinky.',
       'It is the same hand shape in a new place. Moving a position is how you play higher or lower melodies without changing the fingering.',
     ],
     keyboard: { from: G_RANGE[0], to: G_RANGE[1], keys: picture(G_POSITION) },
   },
   {
     kind: 'play',
-    title: 'Thumb to pinky, from G',
+    title: 'Thumb to pinky, from Sol (G)',
     show: { keys: true, fingers: true },
     keyboard: G_RANGE,
     targets: gTargets([1, 2, 3, 4, 5]),
@@ -69,9 +69,9 @@ const steps: Step[] = [
   },
   {
     kind: 'info',
-    title: 'The C major scale',
+    title: 'The Do (C) major scale',
     body: [
-      'A scale is all the white keys in a row, from one C to the next. It sounds like "do re mi fa sol la ti do".',
+      'A scale is all the white keys in a row, from one Do to the next: Do Re Mi Fa Sol La Si Do (C D E F G A B C).',
       'Your hand only has five fingers, so on the way up the thumb tucks under the hand after the middle finger. Keep your wrist loose and let the thumb glide.',
     ],
     list: [
@@ -91,7 +91,7 @@ const steps: Step[] = [
   {
     kind: 'play',
     title: 'Scale up: the thumb tucks under',
-    body: 'Start on the middle finger on E, then thumb under to F.',
+    body: 'Start on the middle finger on Mi (E), then thumb under to Fa (F).',
     show: { keys: true, fingers: true },
     keyboard: [60, 72],
     targets: fingered(SCALE_UP.slice(2, 5)),
@@ -125,11 +125,11 @@ const steps: Step[] = [
 export const newPositions: LessonDef = {
   id: 'new-positions',
   title: 'New positions and the scale',
-  summary: 'Move your hand to G, then play the C major scale with the thumb tucking under.',
+  summary: 'Move your hand to Sol (G), then play the Do (C) major scale with the thumb tucking under.',
   goals: [
-    'Place the right hand in G position (thumb on G)',
+    'Place the right hand in Sol (G) position, thumb on Sol',
     'Understand that a position is a hand shape you can move',
-    'Play the C major scale up and down with the right fingering',
+    'Play the Do (C) major scale up and down with the right fingering',
   ],
   steps,
 };

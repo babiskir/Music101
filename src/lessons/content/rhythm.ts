@@ -1,10 +1,9 @@
-import type { Step } from '../../guide/types';
 import type { LessonDef } from '../types';
+import { rhythmStep } from './builders';
 
-const BPM = 60;
 const how = 'After a count-in, play any key on every note that lights up. Keep it steady.';
 
-const rhythm = (title: string, beats: number[], body = how): Step => ({ kind: 'rhythm', title, body, beats, bpm: BPM });
+const rhythm = (title: string, beats: number[]) => rhythmStep(title, beats, { body: how });
 
 export const feelTheBeat: LessonDef = {
   id: 'rhythm-basics',

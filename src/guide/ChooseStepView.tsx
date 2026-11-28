@@ -1,9 +1,12 @@
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { getAudioContext } from '../audio/audioContext';
 import { playNote } from '../audio/sounds';
 import { midiToPitch } from '../domain/notes';
 import type { TimedNote } from '../domain/song';
 import { StaffNotation } from '../features/staff/StaffNotation';
+import { useRecentKeys } from '../features/staff/useRecentKeys';
+import { useTimers } from '../lib/useTimers';
+import { CheckIcon, SpeakerIcon } from '../app/icons';
 import { cue } from './feedback';
 import { labelsFor } from './labels';
 import type { ChooseStep } from './types';
@@ -24,7 +27,8 @@ export function ChooseStepView({ step, onDone, onAttempt }: Props) {
   const [message, setMessage] = useState<string | null>(null);
   const [wrong, setWrong] = useState<number | null>(null);
   const [done, setDone] = useState(false);
-  const timer = useRef<number | null>(null);
+  const { later } = useTimers();
+  const recent = useRecentKeys();
 
   const choice = choices[Math.min(index, choices.length - 1)];
 
@@ -33,13 +37,16 @@ export function ChooseStepView({ step, onDone, onAttempt }: Props) {
     [choice],
   );
   const labels = useMemo(
-    () => (choice.notes ? labelsFor(choice.notes, choice.labels, choice.solfege) : undefined),
+    () => (choice.notes ? labelsFor(choice.notes, choice.labels) : undefined),
     [choice],
   );
 
   const hear = () => {
     const t = getAudioContext().currentTime;
-    choice.notes?.forEach((m, i) => playNote(m, t + i * NOTE_GAP_S, 0.5));
+    choice.notes?.forEach((m, i) => {
+      playNote(m, t + i * NOTE_GAP_S, 0.5);
+      later(() => recent.press(m), i * NOTE_GAP_S * 1000);
+    });
   };
 
   const answer = (i: number) => {
@@ -57,7 +64,7 @@ export function ChooseStepView({ step, onDone, onAttempt }: Props) {
     if (index + 1 >= choices.length) {
       setDone(true);
       cue('done');
-      timer.current = window.setTimeout(onDone, DONE_PAUSE_MS);
+      later(onDone, DONE_PAUSE_MS);
     } else {
       cue('ok');
       setIndex(index + 1);
@@ -80,12 +87,14 @@ export function ChooseStepView({ step, onDone, onAttempt }: Props) {
               maxBarsPerLine={1}
               timeSignature={false}
               labels={labels}
+              clef={choice.clef}
+              glow={recent.keys}
             />
           </div>
         )}
         {notes && (
           <button onClick={hear} className="hear">
-            🔊 Hear it
+            <SpeakerIcon /> Hear it
           </button>
         )}
         <div className="answers choices">
@@ -102,8 +111,8 @@ export function ChooseStepView({ step, onDone, onAttempt }: Props) {
         </div>
       </div>
 
-      <p className="feedback-line" aria-live="polite">
-        {done ? '✓ Done' : message ?? ' '}
+      <p className={`feedback-line${done ? ' is-done' : message ? ' is-wrong' : ''}`} aria-live="polite">
+        {done ? <><CheckIcon /> Done</> : message ?? ' '}
       </p>
     </div>
   );

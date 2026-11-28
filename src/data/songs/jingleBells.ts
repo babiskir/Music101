@@ -19,11 +19,11 @@ export const jingleBells: Song = {
   targetBpm: 110,
   hand: 'right',
   handPosition:
-    'Right hand in the usual five-finger position: thumb on middle C, one finger per white key up to G. No hand movement.',
+    'Right hand in the usual five-finger position: thumb on middle Do (C), one finger per white key up to Sol (G). No hand movement.',
   tips: [
     'The first two bars are the same note three times: "Jin-gle bells". Say the words as you play.',
-    'The third bar has a dotted note: the C lasts one and a half beats, then a quick D.',
-    'The last bar is the biggest jump, a leap from D to G.',
+    'The third bar has a dotted note: the Do (C) lasts one and a half beats, then a quick Re (D).',
+    'The last bar is the biggest jump, a leap from Re to Sol (D to G).',
   ],
   notes: [
     E(), E(), E(2),

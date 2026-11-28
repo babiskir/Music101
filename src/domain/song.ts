@@ -31,6 +31,10 @@ export interface Song {
 export interface TimedNote extends SongNote {
   /** Position of the note's start, in beats from the beginning of the song. */
   startBeat: number;
+  /** A rest: silence for `beats` (the pitch is ignored). */
+  rest?: boolean;
+  /** Other notes that sound at the same time as `pitch` (both hands, chords). */
+  also?: Pitch[];
 }
 
 export function withTiming(song: Song): TimedNote[] {

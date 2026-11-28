@@ -6,6 +6,10 @@ yet); the left hand / bass clef and notes below middle C are a later chapter; th
 lesson stayed as "Shortcuts and sharps" (id `reading-notes`, so saved progress survives).
 Code: `src/lessons/content/reading.ts`, `src/guide/ChooseStepView.tsx`, `src/guide/labels.ts`.
 
+**Changed 2026-11-25:** **Do Re Mi (fixed do, "si") and the letters now have equal weight
+everywhere** ("Do (C)"; written quiz prompts are half and half). Where the text below says letters are
+primary or that do-re-mi is only for the transition lessons, it is out of date.
+
 ## Problem
 
 "Reading notes" jumps from letters to the full treble staff in one lesson: lines and spaces, then

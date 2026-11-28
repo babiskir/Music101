@@ -5,9 +5,9 @@ import type { LessonDef } from '../types';
 export const findTheNote: LessonDef = {
   id: 'find-the-key',
   title: 'Find the note',
-  summary: 'A note appears as a letter or on the staff. Play it on your piano.',
+  summary: 'A note appears by name or on the staff. Play it on your piano.',
   goals: [
-    'Go from a letter (A to G, with sharps like F#) to the right key without counting',
+    'Go from a name (Do or C, with sharps like Fa♯ or F#) to the right key without counting',
     'Do the same with a note written on the staff',
     'Use the landmark trick for each note name',
   ],
@@ -20,8 +20,8 @@ export const findTheNote: LessonDef = {
     },
     {
       kind: 'play',
-      title: 'Find the letter',
-      body: 'A letter appears: play that note. Any octave counts.',
+      title: 'Find the name',
+      body: 'A name appears, sometimes as Do Re Mi and sometimes as a letter: play that note. Any octave counts.',
       names: false,
       keyboard: [60, 72],
       targets: () => quizTargets(whiteKeys(60, 72), 6, 'name'),
@@ -29,14 +29,14 @@ export const findTheNote: LessonDef = {
     {
       kind: 'play',
       title: 'Sharps and flats too',
-      body: 'F# and Gb are the same key.',
+      body: 'Fa♯ (F sharp) and Sol♭ (G flat) are the same key.',
       names: false,
       keyboard: [60, 72],
       targets: () => quizTargets(allKeys(60, 72), 6, 'name'),
     },
     {
       kind: 'play',
-      title: 'Letters on the whole keyboard',
+      title: 'Names on the whole keyboard',
       names: false,
       keyboard: [36, 96],
       hintAfterMs: 12000,
@@ -44,8 +44,8 @@ export const findTheNote: LessonDef = {
     },
     {
       kind: 'play',
-      title: 'Mixed: letters and sheet music',
-      body: 'Some prompts are letters, some are notes on the staff. For a staff note, play exactly that key.',
+      title: 'Mixed: names and sheet music',
+      body: 'Some prompts are names, some are notes on the staff. For a staff note, play exactly that key.',
       names: false,
       keyboard: [60, 84],
       targets: () => quizTargets(whiteKeys(60, 79), 8, 'mixed'),

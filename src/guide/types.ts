@@ -1,28 +1,33 @@
 import type { Finger } from '../domain/song';
 import type { KeyHighlight } from '../features/keyboard/Keyboard';
+import type { Clef, StaffClef } from '../features/staff/grand';
 
 /**
  * How a quiz writes the note it asks for. Never with octave numbers ("C4"):
- *  - 'name'  : a letter, A to G, with sharps (F#). Any octave of that note counts.
+ *  - 'name'  : a written name, half the time Do to Si and half the time C to B. Any octave of that note counts.
  *  - 'staff' : a note on the treble staff. Exactly that key counts.
  *  - 'mixed' : each prompt randomly one or the other.
  */
-export type Notation = 'name' | 'staff' | 'mixed' | 'solfege';
+export type Notation = 'name' | 'staff' | 'mixed';
 
-/** Letters printed under the notes of a staff: on every note, only the first, or none (they fade away). */
+/** Names printed under the notes of a staff: on every note, only the first, or none (they fade away). */
 export type LabelMode = 'all' | 'first' | 'none';
 
 /** One thing the player has to play. */
 export interface Target {
   /** Accept exactly this key... */
   midi?: number;
-  /** ...or any key for which this returns true (e.g. any octave of F#). One of the two is required. */
+  /** ...or any key for which this returns true (e.g. any octave of F#)... */
   match?: (midi: number) => boolean;
+  /** ...or all of these keys at once (both hands). `ref` is the melody note among them. One of the three is required. */
+  keys?: number[];
   /** A key on the keyboard that stands for this target (keyboard range, staff note). */
   ref?: number;
-  /** Quiz card presentation: a big letter or a single note on the staff. Omit for a plain text target. */
+  /** Staff for a quiz card shown on the staff (default treble). */
+  clef?: StaffClef;
+  /** Quiz card presentation: a big name or a single note on the staff. Omit for a plain text target. */
   present?: 'name' | 'staff';
-  /** Big text: the letter, "Finger 3 (middle)", "Middle C"... */
+  /** Big text: the note name, "Finger 3 (middle)", "Middle Do"... */
   label?: string;
   /** Small label on the progress chips (omit to hide the answer). */
   chip?: string;
@@ -43,10 +48,10 @@ export interface Show {
   fingers?: boolean;
   /** Sheet music for the whole sequence, with the current note lit (songs and runs). */
   staff?: boolean;
-  /** Letter names under the notes of the sheet music (default none). */
+  /** Note names under the notes of the sheet music (default none). */
   labels?: LabelMode;
-  /** Add do-re-mi next to the letters (fixed do: do = C). */
-  solfege?: boolean;
+  /** Treble (default), bass, or the grand staff for both hands. */
+  clef?: Clef;
 }
 
 /** Read-and-continue screen. Advances when the player presses any key on the piano. */
@@ -59,7 +64,7 @@ export interface InfoStep {
   /** Optional picture of the keyboard with some keys marked. */
   keyboard?: { from: number; to: number; keys?: Record<number, KeyHighlight>; names?: boolean };
   /** Optional picture of a few notes on the staff, left to right, one beat each. */
-  staff?: { notes: number[]; labels?: LabelMode; solfege?: boolean };
+  staff?: { notes: number[]; labels?: LabelMode; clef?: Clef };
 }
 
 /** "Play this" step: the app listens and advances by itself. */
@@ -71,7 +76,7 @@ export interface PlayStep {
   show?: Show;
   /** Keyboard window (white keys at both ends). Defaults to the octaves the targets use. */
   keyboard?: [number, number];
-  /** Letter names printed on the on-screen keys. Default true; turn off for "find it yourself" quizzes. */
+  /** Note names printed on the on-screen keys. Default true; turn off for "find it yourself" quizzes. */
   names?: boolean;
   /** Seconds-in-ms of silence before the hint appears (default 10000). */
   hintAfterMs?: number;
@@ -83,7 +88,7 @@ export interface RhythmStep {
   kind: 'rhythm';
   title: string;
   body?: string;
-  /** Note lengths in beats, e.g. [1, 1, 2]. */
+  /** Note lengths in beats, e.g. [1, 1, 2]. A negative length is a rest: [1, -1] = a quarter note, then a quarter rest. */
   beats: number[];
   bpm: number;
   beatsPerBar?: number;
@@ -97,9 +102,9 @@ export interface Choice {
   prompt: string;
   /** Notes (MIDI) drawn on the staff, left to right, and played when "Hear it" is pressed. */
   notes?: number[];
-  /** Letters printed under those notes. */
+  /** Names printed under those notes. */
   labels?: LabelMode;
-  solfege?: boolean;
+  clef?: Clef;
   options: string[];
   /** Index into `options`. */
   answer: number;

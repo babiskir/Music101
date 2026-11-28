@@ -10,10 +10,14 @@ import { doReMi, fiveNotes, higherOrLower, landmarks, reachHigher, shortTunes, t
 import { jingleBellsLesson, maryLesson, odeToJoyLesson, twinkleLesson } from './content/songs';
 import { readingNotes } from './content/readingNotes';
 import { stepsAndSkips } from './content/stepsAndSkips';
+import { rests } from './content/rests';
+import { bassClef, grandStaff, leftHandTunes } from './content/leftHand';
+import { handsTogether } from './content/handsTogether';
 
 /**
  * Order here = order in the Lessons menu = suggested learning order.
  * Reading music is a ramp: higher/lower, do re mi, 3 notes, 5 notes, tunes, then songs, then more notes.
+ * After the chords comes the left hand: the bass clef, left-hand tunes, the grand staff, then hands together.
  */
 export const lessons: LessonDef[] = [
   keyboardBasics,
@@ -21,6 +25,7 @@ export const lessons: LessonDef[] = [
   handAndFingers,
   feelTheBeat,
   barsAndMeter,
+  rests,
   stepsAndSkips,
   higherOrLower,
   doReMi,
@@ -36,4 +41,8 @@ export const lessons: LessonDef[] = [
   readingNotes,
   newPositions,
   chords,
+  bassClef,
+  leftHandTunes,
+  grandStaff,
+  handsTogether,
 ];

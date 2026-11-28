@@ -1,15 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { getAudioContext } from '../audio/audioContext';
-import { playNote } from '../audio/sounds';
+import { playNow } from '../audio/sounds';
 import { CT_S100 } from '../domain/instrument';
-import { midiToPitch, pitchClassLabel } from '../domain/notes';
+import { bothClassNames, midiToPitch } from '../domain/notes';
 import { FINGER_NAMES, type TimedNote } from '../domain/song';
 import { Keyboard, type KeyHighlight } from '../features/keyboard/Keyboard';
 import { rangeForNotes } from '../features/keyboard/range';
 import { StaffNotation } from '../features/staff/StaffNotation';
+import { useRecentKeys } from '../features/staff/useRecentKeys';
 import { usePiano, usePianoNotes } from '../input/PianoInput';
+import { useTimers } from '../lib/useTimers';
+import { CheckIcon } from '../app/icons';
 import { cue, isCueActive, speak } from './feedback';
 import { labelsFor } from './labels';
+import { accepts, keysAccepting } from './targets';
+import { TOGETHER_MS, TogetherJudge } from './together';
 import type { PlayStep, Target } from './types';
 
 interface Props {
@@ -22,11 +26,12 @@ interface Props {
 
 const DONE_PAUSE_MS = 1000;
 
-const accepts = (t: Target, midi: number) => (t.midi !== undefined ? midi === t.midi : !!t.match && t.match(midi));
+/** The note a target is named by: its key, or the melody note of several keys together. */
+const melodyOf = (t: Target): number => t.midi ?? t.ref ?? Math.max(...(t.keys ?? [60]));
 
 /**
  * "Play this" step. Two looks, same logic:
- *  - quiz cards (targets with a `present`): one prompt at a time, as a letter or a note on the staff;
+ *  - quiz cards (targets with a `present`): one prompt at a time, as a note name or a note on the staff;
  *  - sequences: a line of things to play, optionally with the sheet music and the key lit up.
  * The player answers on the piano; the on-screen keyboard also works as a fallback.
  */
@@ -39,7 +44,11 @@ export function PlayStepView({ step, onDone, onAttempt }: Props) {
   const [message, setMessage] = useState<string | null>(null);
   const [hinted, setHinted] = useState(false);
   const [done, setDone] = useState(false);
-  const timers = useRef<number[]>([]);
+  const { later } = useTimers();
+  // Both hands at once: which keys of the current target are already down.
+  const recent = useRecentKeys();
+  const judge = useRef<TogetherJudge | null>(null);
+  const [found, setFound] = useState<number[]>([]);
 
   const show = step.show ?? {};
   const isCard = targets.some((t) => t.present);
@@ -52,11 +61,7 @@ export function PlayStepView({ step, onDone, onAttempt }: Props) {
   }, [step, targets]);
 
   /** Keys on the on-screen keyboard that would be right for a target. */
-  const acceptedKeys = (t: Target) => {
-    const keys: number[] = [];
-    for (let m = from; m <= to; m++) if (accepts(t, m)) keys.push(m);
-    return keys;
-  };
+  const acceptedKeys = (t: Target) => keysAccepting(t, from, to);
 
   // The hint appears when the player is stuck on a target for a while.
   useEffect(() => {
@@ -71,18 +76,26 @@ export function PlayStepView({ step, onDone, onAttempt }: Props) {
     if (t && t.spoken) speak(t.spoken);
   }, [index, targets]);
 
-  useEffect(() => () => timers.current.forEach((id) => window.clearTimeout(id)), []);
-  const later = (fn: () => void, ms: number) => {
-    timers.current.push(window.setTimeout(fn, ms));
-  };
 
-  const handle = (midi: number, fromPiano: boolean) => {
+  const handle = (midi: number, fromPiano: boolean, timeMs: number) => {
     if (done) return;
     // A microphone could pick up our own chime or voice: ignore presses right after those.
     if (fromPiano && piano.source === 'mic' && isCueActive()) return;
-    const ok = accepts(current, midi);
+    let ok: boolean;
+    if (current.keys) {
+      // USB hears both hands at once; the microphone and the mouse can only give one key at a time.
+      judge.current ??= new TogetherJudge(current.keys);
+      const result = judge.current.press(midi, timeMs, fromPiano && piano.source === 'midi' ? TOGETHER_MS : Infinity);
+      setFound(judge.current.found);
+      if (result === 'partial') return;
+      ok = result === 'complete';
+    } else {
+      ok = accepts(current, midi);
+    }
     onAttempt(ok);
     if (ok) {
+      judge.current = null;
+      setFound([]);
       setMessage(null);
       if (index + 1 >= targets.length) {
         setDone(true);
@@ -96,15 +109,16 @@ export function PlayStepView({ step, onDone, onAttempt }: Props) {
       cue('wrong');
       setMistakes((m) => m + 1);
       setWrongKey(midi);
-      setMessage(`That was ${pitchClassLabel(midi % 12)}. Try again.`);
+      setMessage(`That was ${bothClassNames(midi % 12)}. Try again.`);
       later(() => setWrongKey(null), 600);
     }
   };
 
-  usePianoNotes((e) => handle(e.midi, true));
+  usePianoNotes((e) => handle(e.midi, true, e.time));
   const clickKey = (midi: number) => {
-    playNote(midi, getAudioContext().currentTime, 0.6);
-    handle(midi, false);
+    playNow(midi);
+    recent.press(midi);
+    handle(midi, false, performance.now());
   };
 
   // --- keyboard highlights
@@ -113,26 +127,28 @@ export function PlayStepView({ step, onDone, onAttempt }: Props) {
     const label = (t: Target) => (show.fingers && t.finger ? FINGER_NAMES[t.finger] : undefined);
     if (show.keys || hinted) for (const k of acceptedKeys(current)) highlights[k] = { kind: 'current', label: label(current) };
     const next = targets[index + 1];
-    if (show.keys && next && next.midi !== undefined && !highlights[next.midi]) {
-      highlights[next.midi] = { kind: 'next', label: label(next) };
-    }
+    const nextKeys = next ? (next.keys ?? (next.midi !== undefined ? [next.midi] : [])) : [];
+    if (show.keys) for (const k of nextKeys) if (!highlights[k]) highlights[k] = { kind: 'next', label: label(next) };
+    for (const k of found) highlights[k] = { kind: 'correct' };
   }
   if (wrongKey !== null) highlights[wrongKey] = { kind: 'wrong' };
 
   // --- sheet music for a whole sequence (songs, runs)
   const timed = useMemo<TimedNote[] | null>(() => {
-    if (!show.staff || isCard || !targets.every((t) => t.midi !== undefined)) return null;
+    if (!show.staff || isCard || !targets.every((t) => t.midi !== undefined || t.keys)) return null;
     let at = 0;
     return targets.map((t) => {
-      const n: TimedNote = { pitch: midiToPitch(t.midi!), beats: t.beats ?? 1, startBeat: at }; // no finger numbers on the sheet
+      const main = melodyOf(t);
+      const also = t.keys?.filter((k) => k !== main).map(midiToPitch);
+      const n: TimedNote = { pitch: midiToPitch(main), also, beats: t.beats ?? 1, startBeat: at }; // no finger numbers on the sheet
       at += n.beats;
       return n;
     });
   }, [show.staff, isCard, targets]);
 
   const timedLabels = useMemo(
-    () => (timed ? labelsFor(targets.map((t) => t.midi!), show.labels, show.solfege) : undefined),
-    [timed, targets, show.labels, show.solfege],
+    () => (timed ? labelsFor(targets.map(melodyOf), show.labels) : undefined),
+    [timed, targets, show.labels],
   );
 
   // --- a single note on the staff (quiz card)
@@ -140,10 +156,10 @@ export function PlayStepView({ step, onDone, onAttempt }: Props) {
     isCard && current.present === 'staff' && current.midi !== undefined
       ? [{ pitch: midiToPitch(current.midi), beats: 4, startBeat: 0 }]
       : null;
-  // On a card, "first" means: only the first prompt of the round shows its letter.
+  // On a card, "first" means: only the first prompt of the round shows its name.
   const cardLabels =
     cardNote && current.midi !== undefined
-      ? labelsFor([current.midi], index === 0 || show.labels === 'all' ? show.labels : 'none', show.solfege)
+      ? labelsFor([current.midi], index === 0 || show.labels === 'all' ? show.labels : 'none')
       : undefined;
 
   const accepted = done ? [] : acceptedKeys(current);
@@ -152,13 +168,16 @@ export function PlayStepView({ step, onDone, onAttempt }: Props) {
     <div className="play-step" data-testid="play-step" data-index={index} data-expect={accepted.join(',')}>
       <h2>{step.title}</h2>
       {step.body && <p className="explain">{step.body}</p>}
+      {current.keys && piano.source === 'mic' && !done && (
+        <p className="hint-box">The microphone hears one note at a time: play the keys one after the other. Over USB, play them together.</p>
+      )}
 
       {isCard ? (
         <div className="prompt-card">
           {current.present === 'name' && <div className="big-note" aria-label="Play this note">{current.label}</div>}
           {cardNote && (
             <div className="staff-narrow">
-              <StaffNotation notes={cardNote} beatsPerBar={4} activeIndex={-1} maxBarsPerLine={1} timeSignature={false} labels={cardLabels} />
+              <StaffNotation notes={cardNote} beatsPerBar={4} activeIndex={-1} maxBarsPerLine={1} timeSignature={false} labels={cardLabels} clef={current.clef} glow={recent.keys} />
             </div>
           )}
           <div className="dots" aria-hidden="true">
@@ -180,19 +199,26 @@ export function PlayStepView({ step, onDone, onAttempt }: Props) {
             </div>
           )}
           {timed && (
-            <StaffNotation notes={timed} beatsPerBar={step.beatsPerBar ?? 4} activeIndex={done ? -1 : index} labels={timedLabels} />
+            <StaffNotation notes={timed} beatsPerBar={step.beatsPerBar ?? 4} activeIndex={done ? -1 : index} labels={timedLabels} clef={show.clef} glow={recent.keys} />
           )}
         </>
       )}
 
       <Keyboard from={from} to={to} highlights={highlights} onKeyPress={clickKey} showNames={step.names ?? true} />
 
-      <p className="feedback-line" aria-live="polite">
-        {done
-          ? mistakes === 0
-            ? '✓ Clean!'
-            : '✓ Done, with a few slips'
-          : message ?? (hinted && current.hint ? `Hint: ${current.hint}` : ' ')}
+      <p
+        className={`feedback-line${done ? ' is-done' : message ? ' is-wrong' : hinted && current.hint ? ' is-hint' : ''}`}
+        aria-live="polite"
+      >
+        {done ? (
+          <><CheckIcon /> {mistakes === 0 ? 'Clean, no slips.' : 'Done, with a few slips.'}</>
+        ) : message ? (
+          message
+        ) : hinted && current.hint ? (
+          <><strong>Hint</strong> {current.hint}</>
+        ) : (
+          ' '
+        )}
       </p>
     </div>
   );

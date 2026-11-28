@@ -17,7 +17,7 @@ export const odeToJoy: Song = {
   targetBpm: 100,
   hand: 'right',
   handPosition:
-    'Right hand: thumb on middle C (the C in the middle of the keyboard), one finger per key — C D E F G, thumb to pinky. You never have to move your hand.',
+    'Right hand: thumb on middle Do (middle C, in the middle of the keyboard), one finger per key — Do Re Mi Fa Sol (C D E F G), thumb to pinky. You never have to move your hand.',
   tips: [
     'Start at 50-60 BPM. Speed comes by itself; wrong notes practiced slowly become habits.',
     'Say the finger numbers out loud: 3 3 4 5 | 5 4 3 2 | 1 1 2 3 | 3. 2 2',

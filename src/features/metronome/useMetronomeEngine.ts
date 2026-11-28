@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { MetronomeEngine, type MetronomeConfig } from '../../audio/MetronomeEngine';
+import { onStopAll } from '../../audio/audioContext';
 
 type Options = Omit<MetronomeConfig, 'ticksPerBeat' | 'click'> &
   Partial<Pick<MetronomeConfig, 'ticksPerBeat' | 'click'>>;
@@ -32,6 +33,8 @@ export function useMetronomeEngine(options: Options) {
   }, [engine]);
 
   useEffect(() => () => engine.stop(), [engine]);
+  // "Stop sound" halts the engine directly; keep the Start/Stop button in step.
+  useEffect(() => onStopAll(() => setRunning(false)), []);
 
   return { running, start, stop };
 }

@@ -1,15 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
-import { peekAudioContext } from '../audio/audioContext';
+import { peekAudioContext, stopAllSound } from '../audio/audioContext';
 import { usePiano, usePianoNotes } from '../input/PianoInput';
 import type { LessonDef } from '../lessons/types';
 import { numberBetween } from '../lib/storage';
 import { formatLifetime, useLifetimeStats } from '../lib/useLifetimeStats';
 import { usePersistentState } from '../lib/usePersistentState';
+import { ArrowLeftIcon, ArrowRightIcon, CheckIcon, RestartIcon } from '../app/icons';
 import { speak } from './feedback';
-import { ChooseStepView } from './ChooseStepView';
-import { InfoStepView } from './InfoStepView';
-import { PlayStepView } from './PlayStepView';
-import { RhythmStepView } from './RhythmStepView';
+import { StepView } from './StepView';
 
 interface Props {
   lesson: LessonDef;
@@ -50,6 +48,7 @@ export function GuidedLesson({ lesson, onComplete, nextTitle, onNext }: Props) {
 
   const goTo = (i: number) => {
     resumed.current = false;
+    stopAllSound(); // notes and clicks of the step you leave must not keep playing
     if (i >= steps.length) {
       setFinished(true);
       setSaved(0);
@@ -59,6 +58,9 @@ export function GuidedLesson({ lesson, onComplete, nextTitle, onNext }: Props) {
       setRun((r) => r + 1);
     }
   };
+
+  // Leaving the lesson (another lesson, a page): silence it.
+  useEffect(() => () => stopAllSound(), []);
 
   // Read information steps aloud when spoken instructions are on.
   useEffect(() => {
@@ -84,66 +86,79 @@ export function GuidedLesson({ lesson, onComplete, nextTitle, onNext }: Props) {
   const stepKey = `${lesson.id}-${index}-${run}`;
   return (
     <section className="card guide">
-      <div className="guide-progress" role="progressbar" aria-valuemin={0} aria-valuemax={steps.length} aria-valuenow={index + 1} aria-label="Lesson progress">
-        <div className="guide-progress-bar" style={{ width: `${((index + 1) / steps.length) * 100}%` }} />
+      <div className="step-head">
+        <ol className="steps-track" role="progressbar" aria-valuemin={1} aria-valuemax={steps.length} aria-valuenow={index + 1} aria-label="Lesson progress">
+          {steps.map((s, i) => (
+            <li key={i} className={i < index ? 'done' : i === index ? 'current' : ''}>
+              <button title={`Step ${i + 1}: ${s.title}`} aria-label={`Go to step ${i + 1}: ${s.title}`} onClick={() => goTo(i)} />
+            </li>
+          ))}
+        </ol>
+        <span className="step-count">Step {index + 1} of {steps.length}</span>
       </div>
-      <p className="guide-meta">
-        Step {index + 1} / {steps.length}
-        {resumed.current && <> · continuing where you left off · <button className="link" onClick={() => goTo(0)}>start over</button></>}
-      </p>
 
-      {!piano.connected && (
-        <p className="hint-box">
-          {piano.lost
-            ? 'Your keyboard disappeared: it has probably switched itself off (Auto Power Off). Switch it on again and this page reconnects by itself.'
-            : 'No keyboard connected. The lessons are made to be played on your piano: use the button at the top right (or the Keyboard menu) to connect it.'}{' '}
-          You can still click the on-screen keys to try things out.
-        </p>
-      )}
-      {audioBlocked && (
-        <p className="hint-box error">Sound is blocked by the browser until you click anywhere on this page once.</p>
-      )}
+      <div className="guide-body">
+        {resumed.current && (
+          <p className="resume-note">
+            Continuing where you left off. <button className="link" onClick={() => goTo(0)}>Start from the beginning</button>
+          </p>
+        )}
 
-      {step.kind === 'info' && <InfoStepView key={stepKey} step={step} onDone={() => goTo(index + 1)} />}
-      {step.kind === 'play' && (
-        <PlayStepView key={stepKey} step={step} onAttempt={record} onDone={() => goTo(index + 1)} />
-      )}
-      {step.kind === 'rhythm' && <RhythmStepView key={stepKey} step={step} onDone={() => goTo(index + 1)} />}
-      {step.kind === 'choose' && (
-        <ChooseStepView key={stepKey} step={step} onAttempt={record} onDone={() => goTo(index + 1)} />
-      )}
+        {!piano.connected && (
+          <p className="hint-box">
+            {piano.lost
+              ? 'Your keyboard disappeared: it has probably switched itself off (Auto Power Off). Switch it on again and this page reconnects by itself.'
+              : 'No keyboard connected. The lessons are made to be played on your piano: use the button at the top right (or the Keyboard menu) to connect it.'}{' '}
+            You can still click the on-screen keys to try things out.
+          </p>
+        )}
+        {audioBlocked && (
+          <p className="hint-box error">Sound is blocked by the browser until you click anywhere on this page once.</p>
+        )}
 
-      <div className="guide-controls">
-        <button onClick={() => goTo(index - 1)} disabled={index === 0}>← Back</button>
-        <button onClick={() => goTo(index + 1)}>Skip →</button>
-        <button onClick={() => goTo(0)}>Restart lesson</button>
-        <span className="muted">Tip: the ← → keys on your PC keyboard also go back / skip.</span>
-      </div>
-    </section>
-  );
-}
+        <StepView key={stepKey} step={step} onAttempt={record} onDone={() => goTo(index + 1)} />
 
-function FinishedCard({ lesson, stats, nextTitle, onNext, onAgain }: {
-  lesson: LessonDef; stats: string; nextTitle?: string; onNext?: () => void; onAgain: () => void;
-}) {
-  const shownAt = useRef(performance.now());
-  usePianoNotes(() => {
-    if (onNext && performance.now() - shownAt.current > 1500) onNext();
-  });
+        </div>
 
-  return (
-    <section className="card guide finished" data-testid="lesson-finished">
-      <h2>🎉 Lesson complete: {lesson.title}</h2>
-      <p className="muted">{stats}</p>
-      {nextTitle && onNext ? (
-        <p className="continue-line">🎹 Play any key to go on to: <strong>{nextTitle}</strong></p>
-      ) : (
-        <p className="explain">That was the last lesson for now.</p>
-      )}
-      <div className="row">
-        {onNext && <button className="primary" onClick={onNext}>Next: {nextTitle} →</button>}
-        <button onClick={onAgain}>Do this lesson again</button>
-      </div>
-    </section>
-  );
-}
+        <div className="guide-controls">
+          <button className="ghost" onClick={() => goTo(index - 1)} disabled={index === 0} title="Previous step (← key)">
+            <ArrowLeftIcon /> Back
+          </button>
+          <button className="ghost" onClick={() => goTo(0)} title="Start this lesson again">
+            <RestartIcon /> Restart
+          </button>
+          <span className="spacer" />
+          <button className="ghost" onClick={() => goTo(index + 1)} title="Skip this step (→ key)">
+            Skip step <ArrowRightIcon />
+          </button>
+        </div>
+      </section>
+    );
+  }
+
+  function FinishedCard({ lesson, stats, nextTitle, onNext, onAgain }: {
+    lesson: LessonDef; stats: string; nextTitle?: string; onNext?: () => void; onAgain: () => void;
+  }) {
+    const shownAt = useRef(performance.now());
+    usePianoNotes(() => {
+      if (onNext && performance.now() - shownAt.current > 1500) onNext();
+    });
+
+    return (
+      <section className="card guide finished" data-testid="lesson-finished">
+        <div className="finished-mark"><CheckIcon /></div>
+        <p className="eyebrow" style={{ justifyContent: 'center', marginTop: 16 }}>Lesson complete</p>
+        <h2>{lesson.title}</h2>
+        <p className="muted">{stats}</p>
+        <div className="row">
+          {onNext && <button className="primary" onClick={onNext}>Next: {nextTitle} <ArrowRightIcon /></button>}
+          <button onClick={onAgain}>Do this lesson again</button>
+        </div>
+        {nextTitle && onNext ? (
+          <p className="continue-line">or play any key on your piano to go on</p>
+        ) : (
+          <p className="continue-line">That was the last lesson for now.</p>
+        )}
+      </section>
+    );
+  }

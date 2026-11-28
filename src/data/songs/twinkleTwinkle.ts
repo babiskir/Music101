@@ -17,10 +17,10 @@ export const twinkleTwinkle: Song = {
   targetBpm: 100,
   hand: 'right',
   handPosition:
-    'Right hand: thumb on middle C, one finger per key up to G. The only new thing is A: stretch your pinky one key past G (or let the whole hand slide up a key).',
+    'Right hand: thumb on middle Do (C), one finger per key up to Sol (G). The only new thing is La (A): stretch your pinky one key past Sol (or let the whole hand slide up a key).',
   tips: [
-    'Only 3 ideas: "C C G G A A G" / "F F E E D D C" / "G G F F E E D". Learn each line separately.',
-    'The jump C to G (bar 1) is a leap of a fifth — thumb to pinky. Practice just that.',
+    'Only 3 ideas: "Do Do Sol Sol La La Sol" / "Fa Fa Mi Mi Re Re Do" / "Sol Sol Fa Fa Mi Mi Re" (C C G G A A G / F F E E D D C / G G F F E E D). Learn each line separately.',
+    'The jump Do to Sol, C to G (bar 1) is a leap of a fifth — thumb to pinky. Practice just that.',
     'Lines 3 and 4 are identical, and the song ends by repeating line 1 and 2.',
   ],
   notes: [
